@@ -1,0 +1,60 @@
+name: Auto Tagging
+
+on:
+  push:
+    branches:
+      - main # main 브랜치로 push될 때 실행
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 모든 태그 가져오기
+
+      - name: Get Latest Tag
+        id: latest_tag
+        run: |
+          latest=$(git tag --sort=-v:refname | head -n 1)
+          if [[ -z "$latest" ]]; then
+            latest="v0.0.0"
+          fi
+          echo "Latest tag: $latest"
+          echo "tag=$latest" >> $GITHUB_ENV
+
+      - name: Get Merged Branch Name
+        id: merged_branch
+        run: |
+          branch=$(git log --merges -1 --pretty=format:"%P" | awk '{print $2}' | xargs git name-rev --name-only | cut -d/ -f2-)
+          echo "Merged branch: $branch"
+          echo "branch=$branch" >> $GITHUB_ENV
+
+      - name: Determine New Tag
+        id: new_tag
+        run: |
+          latest="${{ env.tag }}"
+          major=$(echo $latest | cut -d. -f1 | sed 's/v//')
+          minor=$(echo $latest | cut -d. -f2)
+          patch=$(echo $latest | cut -d. -f3)
+
+          # hotfix 브랜치에서 병합된 경우 패치 버전 증가
+          if [[ "${{ env.branch }}" == hotfix* ]]; then
+            patch=$((patch + 1))
+          else
+            minor=$((minor + 1))
+            patch=0
+          fi
+
+          new_tag="v$major.$minor.$patch"
+          echo "New tag: $new_tag"
+          echo "tag=$new_tag" >> $GITHUB_ENV
+
+      - name: Create Git Tag
+        run: |
+          git config --global user.name "treephesians"
+          git config --global user.email "ephesi4ns623@gmail.com"
+          git tag ${{ env.tag }}
+          git push origin ${{ env.tag }}
