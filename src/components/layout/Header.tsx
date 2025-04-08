@@ -1,5 +1,5 @@
 import Link from "next/link";
-import ThemeToggle from "../ui/ThemeToggle";
+import ThemeToggle from "./ThemeToggle";
 
 const Header = () => {
   return (
@@ -13,10 +13,10 @@ const Header = () => {
             <ul className="flex space-x-6">
               <li>
                 <Link
-                  href="/post"
+                  href="/posts"
                   className="hover:text-stone-600 transition-colors"
                 >
-                  post
+                  posts
                 </Link>
               </li>
               <li>

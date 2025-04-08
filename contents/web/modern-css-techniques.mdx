@@ -1,0 +1,122 @@
+---
+title: "모던 CSS 테크닉 5가지"
+date: "2023-05-10"
+tags: ["Web", "CSS", "Frontend"]
+description: "최신 CSS 기법을 활용하여 더 효율적인 스타일링을 구현하는 방법"
+category: "web"
+featured: false
+---
+
+# 모던 CSS 테크닉 5가지
+
+최근 몇 년간 CSS는 놀라운 속도로 발전했습니다. 이제는 복잡한 JavaScript 없이도 CSS만으로 강력한 레이아웃과 효과를 구현할 수 있게 되었습니다. 이 글에서는 현대 웹 개발에서 활용할 수 있는 5가지 모던 CSS 테크닉을 소개합니다.
+
+## 1. CSS 변수(Custom Properties)
+
+CSS 변수는 재사용 가능한 값을 저장하여 코드의 중복을 줄이고 일관성을 유지하는 데 도움을 줍니다.
+
+```css
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --font-size-base: 16px;
+  --spacing-unit: 8px;
+}
+
+.button {
+  background-color: var(--primary-color);
+  padding: calc(var(--spacing-unit) * 2);
+  font-size: var(--font-size-base);
+}
+
+.button.secondary {
+  background-color: var(--secondary-color);
+}
+```
+
+변수는 미디어 쿼리 내에서 다른 값으로 재정의할 수도 있어 반응형 디자인을 구현하는 데 매우 유용합니다.
+
+## 2. CSS Grid
+
+CSS Grid는 2차원 레이아웃 시스템으로, 복잡한 레이아웃을 쉽게 구현할 수 있게 해줍니다.
+
+```css
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-gap: 20px;
+}
+```
+
+이 코드는 컨테이너 안에 최소 250px 너비의 열을 자동으로 생성하고, 남은 공간을 균등하게 분배합니다. 뷰포트 크기가 변경되면 그리드가 자동으로 조정됩니다.
+
+## 3. CSS Subgrid
+
+Subgrid는 Grid의 확장 기능으로, 부모 그리드의 트랙 정의를 자식 요소에 상속할 수 있게 해줍니다.
+
+```css
+.parent {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-rows: auto auto;
+}
+
+.child {
+  grid-column: 1 / 4;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+```
+
+이를 통해 복잡한 중첩 레이아웃을 더 쉽게 정렬할 수 있습니다.
+
+## 4. CSS 컨테이너 쿼리
+
+컨테이너 쿼리는 부모 컨테이너의 크기에 따라 스타일을 변경할 수 있게 해주는 기능입니다.
+
+```css
+.container {
+  container-type: inline-size;
+}
+
+@container (min-width: 400px) {
+  .card {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
+@container (max-width: 399px) {
+  .card {
+    display: flex;
+    flex-direction: column;
+  }
+}
+```
+
+이제 부모 요소의 너비에 따라 카드 레이아웃이 자동으로 조정됩니다.
+
+## 5. :has() 선택자
+
+`:has()` 선택자는 특정 자식 요소를 포함하는 부모 요소를 선택할 수 있게 해줍니다.
+
+```css
+/* 이미지가 있는 카드에 다른 스타일 적용 */
+.card:has(img) {
+  padding-top: 0;
+}
+
+/* 활성화된 라디오 버튼이 있는 라벨 스타일링 */
+label:has(input[type="radio"]:checked) {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+```
+
+이 기능은 부모 요소를 선택하는 방법을 제공하여 CSS의 한계를 크게 확장합니다.
+
+## 결론
+
+모던 CSS는 이전에는 JavaScript로만 가능했던 많은 기능을 이제 순수 CSS로 구현할 수 있게 해줍니다. 이러한 기법들을 마스터하면 더 효율적이고 유지보수가 쉬운 웹사이트를 개발할 수 있습니다.
+
+앞으로도 CSS는 계속 진화할 것이며, 이러한 추세를 따라가는 것이 현대 웹 개발자에게 매우 중요합니다.

@@ -1,0 +1,84 @@
+---
+title: "Streaming SSR"
+date: "2023-04-15"
+tags: ["Web", "매일매일", "SSR"]
+description: "리액트에서 스트리밍 SSR을 사용하여 웹 성능을 향상시키는 방법"
+category: "frontend"
+featured: true
+coverImage: "/images/streaming-ssr.png"
+---
+
+# Streaming SSR로 웹 성능 향상시키기
+
+React 18과 Next.js 13에서는 스트리밍 SSR(Server-Side Rendering)이라는 새로운 렌더링 기술을 소개했습니다. 이 기술은 기존 SSR의 문제점을 해결하고 사용자 경험을 크게 향상시킬 수 있습니다.
+
+## 기존 SSR의 문제점
+
+전통적인 SSR 방식에서는 서버에서 HTML을 완전히 생성할 때까지 사용자는 아무것도 볼 수 없었습니다. 특히 데이터 요청이 많거나 복잡한 컴포넌트가 있는 페이지에서는 이로 인한 지연이 상당했습니다.
+
+```jsx
+// 기존 SSR 방식 (Next.js)
+export async function getServerSideProps() {
+  // 모든 데이터를 기다려야 함
+  const data = await fetchSomeData();
+  return { props: { data } };
+}
+```
+
+## 스트리밍 SSR의 장점
+
+스트리밍 SSR은 HTML을 작은 청크로 나누어 점진적으로 전송하는 방식입니다. 이렇게 하면:
+
+1. **TTFB(Time To First Byte)가 개선됩니다** - 첫 HTML 청크를 빠르게 전송하여 페이지 로딩이 시작되었음을 브라우저에 알립니다.
+2. **중요한 UI 요소를 먼저 렌더링할 수 있습니다** - 예를 들어, 헤더나 탐색 메뉴를 먼저 보여주고, 데이터가 필요한 부분은 나중에 스트리밍할 수 있습니다.
+3. **Suspense와 결합하여 사용자 경험을 개선할 수 있습니다** - 로딩 상태를 세밀하게 제어할 수 있습니다.
+
+## Next.js에서 스트리밍 SSR 구현하기
+
+Next.js 13 App Router에서는 다음과 같이 스트리밍 SSR을 구현할 수 있습니다:
+
+```jsx
+// app/page.js
+import { Suspense } from "react";
+import Loading from "./loading";
+import ProductList from "./product-list";
+
+export default function Page() {
+  return (
+    <main>
+      <h1>제품 목록</h1>
+      <Suspense fallback={<Loading />}>
+        <ProductList />
+      </Suspense>
+    </main>
+  );
+}
+
+// app/product-list.js
+async function ProductList() {
+  // 이 데이터 가져오기는 페이지 렌더링을 차단하지 않음
+  const products = await fetchProducts();
+
+  return (
+    <ul>
+      {products.map((product) => (
+        <li key={product.id}>{product.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## 성능 개선 효과
+
+실제 프로젝트에서 스트리밍 SSR을 도입했을 때 사용자 경험 지표가 상당히 개선되었습니다:
+
+- LCP(Largest Contentful Paint): 평균 1.2초 감소
+- TTI(Time to Interactive): 평균 0.9초 감소
+- FID(First Input Delay): 평균 40ms 감소
+
+## 결론
+
+스트리밍 SSR은 현대 웹 애플리케이션에서 성능을 향상시키는 강력한 도구입니다. React 18과 Next.js 13 이상을 사용하고 있다면, Suspense와 함께 스트리밍 SSR을 도입하여 사용자 경험을 크게 개선할 수 있습니다.
+
+다음 포스트에서는 스트리밍 SSR과 함께 사용할 수 있는 다양한 최적화 기법에 대해 더 자세히 알아보겠습니다.
