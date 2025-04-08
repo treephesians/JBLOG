@@ -49,7 +49,7 @@ export function PostCard({ post }: PostCardProps) {
       <div className="flex flex-col">
         <CardHeader className="p-3">
           <CardTitle className="text-lg line-clamp-2">
-            <Link href={`/post/${post.slug}`} className="hover:underline">
+            <Link href={`/posts/${post.slug}`} className="hover:underline">
               {post.title}
             </Link>
           </CardTitle>
