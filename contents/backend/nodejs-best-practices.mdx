@@ -1,0 +1,275 @@
+---
+title: "Node.js 백엔드 개발 모범 사례"
+date: "2023-08-05"
+tags: ["Node.js", "JavaScript", "Backend", "API"]
+description: "확장 가능하고 유지보수하기 쉬운 Node.js 애플리케이션을 위한 10가지 모범 사례"
+category: "backend"
+featured: true
+coverImage: "/images/streaming-ssr.jpg"
+---
+
+# Node.js 백엔드 개발 모범 사례
+
+Node.js는 확장 가능한 백엔드 애플리케이션을 구축하는 데 강력한 플랫폼입니다. 하지만 잘못된 패턴과 실천 방법은 프로젝트의 유지보수를 어렵게 만들 수 있습니다. 이 글에서는 프로덕션 수준의 Node.js 애플리케이션을 개발하기 위한 10가지 모범 사례를 소개합니다.
+
+## 1. 구조화된 프로젝트 아키텍처 사용하기
+
+코드베이스가 커짐에 따라 구조화된 프로젝트 아키텍처는 필수적입니다. 다음과 같이 역할과 책임에 따라 코드를 구성하세요:
+
+```
+src/
+  ├── controllers/   # 요청 처리 및 응답 전송
+  ├── services/      # 비즈니스 로직
+  ├── models/        # 데이터 모델 및 데이터베이스 상호 작용
+  ├── middlewares/   # 미들웨어 함수
+  ├── routes/        # 라우트 정의
+  ├── utils/         # 유틸리티 함수
+  ├── config/        # 환경 설정
+  └── app.js         # 애플리케이션 진입점
+```
+
+## 2. 환경 변수 사용하기
+
+하드코딩된 값이 아닌 환경 변수를 사용하여 다양한 환경(개발, 테스트, 프로덕션)에서 애플리케이션을 쉽게 구성할 수 있도록 하세요:
+
+```javascript
+// config.js
+require("dotenv").config();
+
+module.exports = {
+  port: process.env.PORT || 3000,
+  environment: process.env.NODE_ENV || "development",
+  db: {
+    uri: process.env.DATABASE_URI,
+    options: {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    },
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET,
+    expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+  },
+};
+```
+
+## 3. 비동기 코드 처리하기
+
+Node.js의 비동기 특성을 최대한 활용하세요. Promises와 async/await를 사용하여 콜백 지옥을 피하고 코드를 더 읽기 쉽게 만드세요:
+
+```javascript
+// 콜백 패턴 (피해야 함)
+function getUserData(userId, callback) {
+  db.findUser(userId, (err, user) => {
+    if (err) return callback(err);
+
+    db.findPosts(user.id, (err, posts) => {
+      if (err) return callback(err);
+
+      callback(null, { user, posts });
+    });
+  });
+}
+
+// async/await 패턴 (권장)
+async function getUserData(userId) {
+  try {
+    const user = await db.findUser(userId);
+    const posts = await db.findPosts(user.id);
+    return { user, posts };
+  } catch (error) {
+    throw error;
+  }
+}
+```
+
+## 4. 에러 처리 표준화하기
+
+에러 처리는 모든 Node.js 애플리케이션의 중요한 부분입니다. 일관된 에러 형식과 처리 방법을 유지하세요:
+
+```javascript
+// 중앙 집중식 에러 핸들러 미들웨어
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "서버 오류가 발생했습니다";
+
+  console.error(`[ERROR] ${req.method} ${req.url} - ${err.stack}`);
+
+  res.status(statusCode).json({
+    status: "error",
+    statusCode,
+    message,
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+  });
+});
+
+// 사용자 정의 에러 클래스
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.status = `${statusCode}`.startsWith("4") ? "fail" : "error";
+    this.isOperational = true;
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+```
+
+## 5. 입력 데이터 검증하기
+
+사용자 입력을 항상 검증하여 애플리케이션의 안정성과 보안을 유지하세요. Joi나 express-validator 같은 라이브러리를 사용하세요:
+
+```javascript
+const Joi = require("joi");
+
+// 검증 스키마
+const userSchema = Joi.object({
+  username: Joi.string().alphanum().min(3).max(30).required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().pattern(new RegExp("^[a-zA-Z0-9]{8,30}$")).required(),
+});
+
+// 라우트 핸들러
+router.post("/users", (req, res, next) => {
+  const { error } = userSchema.validate(req.body);
+
+  if (error) {
+    return next(new AppError(error.details[0].message, 400));
+  }
+
+  // 검증 통과 후 로직
+  next();
+});
+```
+
+## 6. 로깅 전략 구현하기
+
+효과적인 로깅은 문제 해결과 애플리케이션 모니터링에 필수적입니다. Winston이나 Pino 같은 로깅 라이브러리를 사용하세요:
+
+```javascript
+const winston = require("winston");
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || "info",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: "error.log", level: "error" }),
+    new winston.transports.File({ filename: "combined.log" }),
+  ],
+});
+
+// 사용 예
+logger.info("서버가 시작되었습니다", { port: config.port });
+logger.error("데이터베이스 연결 오류", { error: err.message });
+```
+
+## 7. 데이터베이스 작업 최적화하기
+
+데이터베이스 작업을 최적화하여 애플리케이션 성능을 향상시키세요:
+
+```javascript
+// 인덱스 사용
+await User.createIndex({ email: 1 }, { unique: true });
+
+// 필요한 필드만 선택
+const user = await User.findById(id).select("name email role");
+
+// 페이지네이션 구현
+const page = parseInt(req.query.page) || 1;
+const limit = parseInt(req.query.limit) || 10;
+const skip = (page - 1) * limit;
+
+const users = await User.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
+```
+
+## 8. 보안 모범 사례 따르기
+
+보안은 모든 백엔드 애플리케이션에서 최우선 사항이어야 합니다:
+
+```javascript
+// 필수 보안 미들웨어
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const xss = require("xss-clean");
+const mongoSanitize = require("express-mongo-sanitize");
+
+// 보안 헤더 설정
+app.use(helmet());
+
+// 속도 제한 설정
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15분
+  max: 100, // IP당 최대 요청 수
+  message: "너무 많은 요청을 보냈습니다. 15분 후에 다시 시도하세요.",
+});
+app.use("/api", limiter);
+
+// XSS 공격 방지
+app.use(xss());
+
+// NoSQL 삽입 방지
+app.use(mongoSanitize());
+```
+
+## 9. 테스트 자동화하기
+
+단위 테스트, 통합 테스트, 엔드투엔드 테스트를 작성하여 코드 품질을 유지하세요:
+
+```javascript
+const request = require("supertest");
+const { expect } = require("chai");
+const app = require("../src/app");
+
+describe("User API", () => {
+  describe("POST /api/users", () => {
+    it("유효한 사용자 데이터로 새 사용자를 생성해야 함", async () => {
+      const userData = {
+        username: "testuser",
+        email: "test@example.com",
+        password: "Password123",
+      };
+
+      const res = await request(app).post("/api/users").send(userData);
+
+      expect(res.statusCode).to.equal(201);
+      expect(res.body).to.have.property("data");
+      expect(res.body.data).to.have.property("user");
+      expect(res.body.data.user.email).to.equal(userData.email);
+    });
+  });
+});
+```
+
+## 10. 성능 모니터링 및 최적화하기
+
+애플리케이션 성능을 지속적으로 모니터링하고 병목 현상을 식별하세요:
+
+```javascript
+// 요청 시간 측정 미들웨어
+app.use((req, res, next) => {
+  req.startTime = Date.now();
+
+  res.on("finish", () => {
+    const duration = Date.now() - req.startTime;
+    logger.info(`${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
+
+    // 느린 요청 추적
+    if (duration > 1000) {
+      logger.warn(`느린 요청: ${req.method} ${req.url} - ${duration}ms`);
+    }
+  });
+
+  next();
+});
+```
+
+## 결론
+
+이러한 모범 사례를 따르면 더 안정적이고, 성능이 좋으며, 유지보수하기 쉬운 Node.js 백엔드 애플리케이션을 구축할 수 있습니다. 모든 프로젝트에서 이러한 원칙을 적용할 필요는 없지만, 이러한 지침은 코드 품질을 향상시키고 개발 경험을 개선하는 데 도움이 될 것입니다.
+
+다음 포스팅에서는 Node.js 애플리케이션을 위한 성능 최적화 기법에 대해 더 자세히 알아보겠습니다.

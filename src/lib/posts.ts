@@ -1,69 +1,134 @@
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
 import { Post } from "@/types/post";
 
-// 예시용 샘플 데이터
-export const samplePosts: Post[] = [
-  {
-    title: "모던 CSS 테크닉 5가지",
-    date: "2025-03-10",
-    tags: ["Web", "CSS", "Frontend"],
-    description:
-      "최신 CSS 기법을 활용하여 더 효율적인 스타일링을 구현하는 방법",
-    category: "web",
-    featured: false,
-    slug: "modern-css-techniques2",
-  },
-  {
-    title: "Streaming SSR",
-    date: "2025-02-15",
-    tags: ["Web", "매일매일", "SSR"],
-    description: "리액트에서 스트리밍 SSR을 사용하여 웹 성능을 향상시키는 방법",
-    category: "frontend",
-    featured: true,
-    coverImage: "/images/streaming-ssr.jpg",
-    slug: "streaming-ssr1",
-  },
-  {
-    title: "모던 CSS 테크닉 5가지",
-    date: "2024-11-10",
-    tags: ["Web", "CSS", "Frontend"],
-    description:
-      "최신 CSS 기법을 활용하여 더 효율적인 스타일링을 구현하는 방법",
-    category: "web",
-    featured: false,
-    slug: "modern-css-techniques",
-  },
+// 컨텐츠 디렉토리 경로
+const contentDirectory = path.join(process.cwd(), "contents");
 
-  {
-    title: "Streaming SSR",
-    date: "2023-04-15",
-    tags: ["Web", "매일매일", "SSR"],
-    description: "리액트에서 스트리밍 SSR을 사용하여 웹 성능을 향상시키는 방법",
-    category: "frontend",
-    featured: true,
-    coverImage: "/images/streaming-ssr.jpg",
-    slug: "streaming-ssr3",
-  },
-  {
-    title: "모던 CSS 테크닉 5가지",
-    date: "2022-05-10",
-    tags: ["Web", "CSS", "Frontend"],
-    description:
-      "최신 CSS 기법을 활용하여 더 효율적인 스타일링을 구현하는 방법",
-    category: "web",
-    featured: false,
-    slug: "modern-css-techniques4",
-  },
-];
-
-export function getAllPosts(): Post[] {
-  // 실제 구현에서는 MDX 파일을 읽어와 정보를 파싱할 수 있습니다
-  return samplePosts;
+// 모든 카테고리 가져오기
+export function getAllCategories(): string[] {
+  try {
+    return fs
+      .readdirSync(contentDirectory)
+      .filter((dir) =>
+        fs.statSync(path.join(contentDirectory, dir)).isDirectory()
+      );
+  } catch (error) {
+    console.error("카테고리를 읽는 중 오류 발생:", error);
+    return [];
+  }
 }
 
+// 특정 카테고리의 모든 포스트 가져오기
 export function getPostsByCategory(category: string): Post[] {
-  return samplePosts.filter((post) => post.category === category);
+  const categoryPath = path.join(contentDirectory, category);
+
+  try {
+    if (!fs.existsSync(categoryPath)) {
+      return [];
+    }
+
+    const fileNames = fs
+      .readdirSync(categoryPath)
+      .filter(
+        (fileName) => fileName.endsWith(".md") || fileName.endsWith(".mdx")
+      );
+
+    const posts = fileNames.map((fileName) => {
+      // 파일명에서 확장자 제거하여 slug 생성
+      const slug = fileName.replace(/\.mdx?$/, "");
+
+      // 포스트 내용 읽기
+      const fullPath = path.join(categoryPath, fileName);
+      const fileContents = fs.readFileSync(fullPath, "utf8");
+
+      // gray-matter를 사용하여 메타데이터 파싱
+      const { data, content } = matter(fileContents);
+
+      // 필요한 데이터 추출
+      const post: Post = {
+        slug,
+        title: data.title || slug,
+        date: data.date
+          ? new Date(data.date).toISOString()
+          : new Date().toISOString(),
+        description: data.description || "",
+        category: category,
+        tags: data.tags || [],
+        coverImage: data.coverImage || null,
+        content,
+      };
+
+      return post;
+    });
+
+    // 날짜 기준 내림차순 정렬
+    return posts.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  } catch (error) {
+    console.error(`${category} 카테고리의 포스트를 읽는 중 오류 발생:`, error);
+    return [];
+  }
 }
 
-export function getPostBySlug(slug: string): Post | undefined {
-  return samplePosts.find((post) => post.slug === slug);
+// 모든 포스트 가져오기
+export function getAllPosts(): Post[] {
+  try {
+    const categories = getAllCategories();
+    let allPosts: Post[] = [];
+
+    categories.forEach((category) => {
+      const postsInCategory = getPostsByCategory(category);
+      allPosts = [...allPosts, ...postsInCategory];
+    });
+
+    // 날짜 기준 내림차순 정렬
+    return allPosts.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  } catch (error) {
+    console.error("모든 포스트를 읽는 중 오류 발생:", error);
+    return [];
+  }
+}
+
+// 특정 포스트 가져오기
+export function getPostBySlug(slug: string): Post | null {
+  try {
+    const categories = getAllCategories();
+
+    for (const category of categories) {
+      const categoryPath = path.join(contentDirectory, category);
+      const possibleExtensions = [".md", ".mdx"];
+
+      for (const ext of possibleExtensions) {
+        const fullPath = path.join(categoryPath, `${slug}${ext}`);
+
+        if (fs.existsSync(fullPath)) {
+          const fileContents = fs.readFileSync(fullPath, "utf8");
+          const { data, content } = matter(fileContents);
+
+          return {
+            slug,
+            title: data.title || slug,
+            date: data.date
+              ? new Date(data.date).toISOString()
+              : new Date().toISOString(),
+            description: data.description || "",
+            category: category,
+            tags: data.tags || [],
+            coverImage: data.coverImage || null,
+            content,
+          };
+        }
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`${slug} 포스트를 읽는 중 오류 발생:`, error);
+    return null;
+  }
 }

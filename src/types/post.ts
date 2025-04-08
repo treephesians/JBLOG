@@ -4,7 +4,8 @@ export interface Post {
   tags: string[];
   description: string;
   category: string;
-  featured: boolean;
-  coverImage?: string;
+  featured?: boolean;
+  coverImage?: string | null;
   slug: string;
+  content?: string;
 }

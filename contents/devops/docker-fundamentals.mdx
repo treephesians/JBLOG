@@ -1,0 +1,180 @@
+---
+title: "Docker 기초부터 실전까지"
+date: "2023-02-20"
+tags: ["Docker", "DevOps", "컨테이너"]
+description: "Docker를 이용한 컨테이너화의 기본 개념과 실제 활용법"
+featured: true
+---
+
+# Docker 기초부터 실전까지
+
+Docker는 애플리케이션을 컨테이너 형태로 패키징하여 개발, 배포, 실행을 일관된 환경에서 할 수 있게 해주는 플랫폼입니다. 이 포스트에서는 Docker의 기본 개념부터 실제 활용 방법까지 알아보겠습니다.
+
+## 왜 Docker를 사용해야 할까?
+
+개발자라면 누구나 한 번쯤 들어봤을 말, "내 컴퓨터에서는 잘 돌아가는데요?"
+
+Docker는 이러한 환경 차이 문제를 해결해 줍니다:
+
+1. **일관된 환경**: 개발, 테스트, 프로덕션 환경을 동일하게 유지
+2. **격리**: 각 컨테이너는 독립된 환경에서 실행됨
+3. **이식성**: 어떤 시스템에서든 동일하게 실행 가능
+4. **확장성**: 여러 컨테이너를 쉽게 구성하고 확장 가능
+
+## Docker의 기본 개념
+
+### 이미지(Image)
+
+Docker 이미지는 애플리케이션과 그 의존성을 포함한 패키지입니다. 이미지는 읽기 전용이며, 컨테이너를 생성하기 위한 템플릿입니다.
+
+### 컨테이너(Container)
+
+컨테이너는 이미지의 실행 인스턴스입니다. 이미지로부터 생성되며, 격리된 환경에서 애플리케이션을 실행합니다.
+
+### Dockerfile
+
+Dockerfile은 Docker 이미지를 생성하기 위한 스크립트입니다. 기본 이미지 선택부터 애플리케이션 설치, 실행 명령까지 정의합니다.
+
+```dockerfile
+# Node.js 앱을 위한 기본적인 Dockerfile
+FROM node:14-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+```
+
+## 기본 Docker 명령어
+
+### 이미지 빌드
+
+```bash
+docker build -t myapp:latest .
+```
+
+### 컨테이너 실행
+
+```bash
+docker run -p 3000:3000 myapp:latest
+```
+
+### 실행 중인 컨테이너 확인
+
+```bash
+docker ps
+```
+
+### 컨테이너 중지 및 제거
+
+```bash
+docker stop <container_id>
+docker rm <container_id>
+```
+
+## Docker Compose로 다중 컨테이너 관리
+
+복잡한 애플리케이션은 여러 서비스(웹 서버, 데이터베이스, 캐시 등)로 구성됩니다. Docker Compose를 사용하면 이러한 다중 컨테이너 환경을 쉽게 정의하고 관리할 수 있습니다.
+
+```yaml
+# docker-compose.yml
+version: "3"
+
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://postgres:password@db:5432/myapp
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=myapp
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+실행 명령:
+
+```bash
+docker-compose up
+```
+
+## 프로덕션 환경에서의 Docker 최적화
+
+### 다단계 빌드 사용
+
+다단계 빌드를 사용하면 빌드 단계와 실행 단계를 분리하여 최종 이미지 크기를 줄일 수 있습니다:
+
+```dockerfile
+# 빌드 단계
+FROM node:14 AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# 실행 단계
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### 이미지 레이어 최적화
+
+Docker 이미지는 레이어로 구성됩니다. 변경이 자주 발생하는 레이어는 Dockerfile의 마지막에 배치하는 것이 좋습니다:
+
+```dockerfile
+FROM node:14-alpine
+
+WORKDIR /app
+
+# 종속성 관련 레이어 (자주 변경되지 않음)
+COPY package*.json ./
+RUN npm install
+
+# 소스 코드 레이어 (자주 변경됨)
+COPY . .
+
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+## 보안 고려사항
+
+1. **비 루트 사용자 사용**:
+
+   ```dockerfile
+   FROM node:14-alpine
+
+   RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+   USER appuser
+
+   # 나머지 명령어...
+   ```
+
+2. **최소한의 베이스 이미지 사용**: Alpine 또는 Distroless 이미지 활용
+
+3. **비밀 정보 관리**: 환경 변수 또는 Docker Secrets 사용
+
+## 결론
+
+Docker는 현대 소프트웨어 개발 및 배포 과정에서 필수적인 도구가 되었습니다. 컨테이너화를 통해 일관된 환경에서 애플리케이션을 개발하고 배포할 수 있으며, 마이크로서비스 아키텍처를 효과적으로 구현할 수 있습니다.
+
+다음 포스팅에서는 Kubernetes를 이용한 Docker 컨테이너 오케스트레이션에 대해 알아보겠습니다.

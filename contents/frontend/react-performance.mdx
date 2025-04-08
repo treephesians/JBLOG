@@ -1,0 +1,311 @@
+---
+title: "React 애플리케이션 성능 최적화 가이드"
+date: "2023-07-12"
+tags: ["React", "Frontend", "성능", "최적화"]
+description: "React 애플리케이션의 속도를 높이고 사용자 경험을 개선하는 실용적인 방법"
+category: "frontend"
+featured: true
+---
+
+# React 애플리케이션 성능 최적화 가이드
+
+React는 뛰어난 개발자 경험과 선언적 UI 구축 방식으로 인기를 얻고 있지만, 애플리케이션이 커지고 복잡해짐에 따라 성능 문제가 발생할 수 있습니다. 이 글에서는 React 애플리케이션의 성능을 최적화하기 위한 실용적인 기법들을 알아보겠습니다.
+
+## 1. 불필요한 리렌더링 방지하기
+
+React의 가장 일반적인 성능 문제 중 하나는 불필요한 리렌더링입니다. 이를 방지하기 위한 여러 방법이 있습니다:
+
+### React.memo 사용하기
+
+```jsx
+// 최적화 전
+function MovieCard({ title, poster, rating }) {
+  return (
+    <div className="movie-card">
+      <img src={poster} alt={title} />
+      <h3>{title}</h3>
+      <span>{rating}/10</span>
+    </div>
+  );
+}
+
+// 최적화 후
+const MovieCard = React.memo(function MovieCard({ title, poster, rating }) {
+  return (
+    <div className="movie-card">
+      <img src={poster} alt={title} />
+      <h3>{title}</h3>
+      <span>{rating}/10</span>
+    </div>
+  );
+});
+```
+
+### useMemo와 useCallback 사용하기
+
+```jsx
+function MovieList({ movies, onMovieSelect }) {
+  // 복잡한 계산 결과 메모이제이션
+  const sortedMovies = useMemo(() => {
+    console.log("영화 정렬 중...");
+    return [...movies].sort((a, b) => b.rating - a.rating);
+  }, [movies]);
+
+  // 콜백 함수 메모이제이션
+  const handleMovieClick = useCallback(
+    (movieId) => {
+      console.log("영화 선택:", movieId);
+      onMovieSelect(movieId);
+    },
+    [onMovieSelect]
+  );
+
+  return (
+    <div>
+      {sortedMovies.map((movie) => (
+        <MovieCard
+          key={movie.id}
+          {...movie}
+          onClick={() => handleMovieClick(movie.id)}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+## 2. 코드 분할(Code Splitting)과 지연 로딩(Lazy Loading)
+
+큰 번들 파일은 초기 로딩 시간을 증가시킵니다. React.lazy와 Suspense를 사용하여 코드 분할을 구현할 수 있습니다:
+
+```jsx
+import React, { Suspense, lazy } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+// 컴포넌트 지연 로딩
+const Home = lazy(() => import("./routes/Home"));
+const Movies = lazy(() => import("./routes/Movies"));
+const MovieDetail = lazy(() => import("./routes/MovieDetail"));
+
+function App() {
+  return (
+    <Router>
+      <Suspense fallback={<div>로딩 중...</div>}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/movies" element={<Movies />} />
+          <Route path="/movies/:id" element={<MovieDetail />} />
+        </Routes>
+      </Suspense>
+    </Router>
+  );
+}
+```
+
+## 3. 가상화(Virtualization) 구현하기
+
+많은 수의 아이템을 렌더링할 때는 가상화 기법을 사용하여 화면에 보이는 요소만 렌더링할 수 있습니다:
+
+```jsx
+import { FixedSizeList } from "react-window";
+
+function MovieList({ movies }) {
+  const Row = ({ index, style }) => (
+    <div style={style}>
+      <MovieCard {...movies[index]} />
+    </div>
+  );
+
+  return (
+    <FixedSizeList
+      height={600}
+      width="100%"
+      itemCount={movies.length}
+      itemSize={150}
+    >
+      {Row}
+    </FixedSizeList>
+  );
+}
+```
+
+## 4. 상태 관리 최적화하기
+
+애플리케이션 상태 관리는 성능에 큰 영향을 미칠 수 있습니다.
+
+### 상태 정규화하기
+
+```jsx
+// 최적화 전 (중첩된 상태)
+const [users, setUsers] = useState({
+  user1: {
+    name: "홍길동",
+    posts: [{ id: 1, title: "첫 번째 글" } /* ... */],
+  },
+  // ...
+});
+
+// 최적화 후 (정규화된 상태)
+const [users, setUsers] = useState({
+  user1: { id: "user1", name: "홍길동", postIds: [1, 2, 3] },
+  // ...
+});
+
+const [posts, setPosts] = useState({
+  1: { id: 1, title: "첫 번째 글", userId: "user1" },
+  // ...
+});
+```
+
+### Context API 사용 시 분할하기
+
+```jsx
+// 최적화 전 (모든 상태를 하나의 Context에 저장)
+const AppContext = createContext();
+
+function AppProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [theme, setTheme] = useState("light");
+  const [cart, setCart] = useState([]);
+
+  return (
+    <AppContext.Provider
+      value={{ user, setUser, theme, setTheme, cart, setCart }}
+    >
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+// 최적화 후 (관심사에 따라 Context 분리)
+const UserContext = createContext();
+const ThemeContext = createContext();
+const CartContext = createContext();
+
+function AppProvider({ children }) {
+  return (
+    <UserProvider>
+      <ThemeProvider>
+        <CartProvider>{children}</CartProvider>
+      </ThemeProvider>
+    </UserProvider>
+  );
+}
+```
+
+## 5. 이미지 및 자산 최적화하기
+
+이미지와 자산은 웹 페이지 성능에 큰 영향을 미칩니다:
+
+### 이미지 최적화
+
+```jsx
+function OptimizedImage({ src, alt, width, height }) {
+  // srcSet을 사용하여 반응형 이미지 제공
+  return (
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading="lazy"
+      srcSet={`
+        ${src}?w=480 480w,
+        ${src}?w=800 800w,
+        ${src}?w=1200 1200w
+      `}
+      sizes="(max-width: 600px) 480px, (max-width: 1024px) 800px, 1200px"
+    />
+  );
+}
+```
+
+Next.js를 사용하는 경우, 내장된 Image 컴포넌트를 활용할 수 있습니다:
+
+```jsx
+import Image from "next/image";
+
+function MoviePoster({ movie }) {
+  return (
+    <Image
+      src={movie.poster}
+      alt={movie.title}
+      width={300}
+      height={450}
+      placeholder="blur"
+      blurDataURL={movie.posterBlur}
+    />
+  );
+}
+```
+
+## 6. 웹 바이탈(Web Vitals) 모니터링하기
+
+성능 최적화를 위해서는 측정 가능한 지표를 모니터링해야 합니다:
+
+```jsx
+import { useEffect } from 'react';
+import { getCLS, getFID, getLCP } from 'web-vitals';
+
+function App() {
+  useEffect(() => {
+    // Web Vitals 측정 및 보고
+    function sendToAnalytics({ name, value }) {
+      console.log(name, value);
+      // 분석 서비스로 데이터 전송
+    }
+
+    getCLS(sendToAnalytics); // Cumulative Layout Shift
+    getFID(sendToAnalytics); // First Input Delay
+    getLCP(sendToAnalytics); // Largest Contentful Paint
+  }, []);
+
+  return (
+    // 애플리케이션 컴포넌트
+  );
+}
+```
+
+## 7. React DevTools 프로파일러 활용하기
+
+React DevTools의 Profiler 탭을 사용하면 애플리케이션의 렌더링 성능을 시각적으로 분석할 수 있습니다:
+
+1. 프로파일링 시작하기
+2. 애플리케이션 사용하기
+3. 프로파일링 중지하기
+4. 렌더링 시간이 긴 컴포넌트 식별하기
+5. "왜 이 컴포넌트가 렌더링되었는지" 확인하기
+
+## 8. 성능 테스트 자동화하기
+
+지속적인 성능 모니터링을 위해 Lighthouse CI를 사용할 수 있습니다:
+
+```yaml
+# lighthouserc.js
+module.exports = {
+  ci: {
+    collect: {
+      url: ['http://localhost:3000/', 'http://localhost:3000/movies'],
+      startServerCommand: 'npm run start',
+    },
+    upload: {
+      target: 'temporary-public-storage',
+    },
+    assert: {
+      preset: 'lighthouse:recommended',
+      assertions: {
+        'first-contentful-paint': ['warn', { maxNumericValue: 2000 }],
+        'interactive': ['error', { maxNumericValue: 3500 }],
+      },
+    },
+  },
+};
+```
+
+## 결론
+
+React 애플리케이션 성능 최적화는 지속적인 과정입니다. 모든 기법을 한 번에 적용할 필요는 없습니다. 실제 성능 문제를 측정하고, 가장 큰 영향을 미치는 부분부터 개선하는 것이 중요합니다.
+
+이 글에서 소개한 기법들을 적절히 적용하면 더 빠르고 반응성이 높은 React 애플리케이션을 구축할 수 있습니다. 성능 최적화는 사용자 경험을 향상시키는 데 중요한 역할을 합니다.
+
+다음 포스팅에서는 서버 사이드 렌더링(SSR)과 정적 사이트 생성(SSG)을 활용한 React 애플리케이션 최적화에 대해 더 자세히 알아보겠습니다.

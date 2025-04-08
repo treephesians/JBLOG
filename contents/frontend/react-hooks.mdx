@@ -1,0 +1,597 @@
+---
+title: "React Hooks 완벽 가이드"
+date: "2023-10-18"
+tags: ["React", "Hooks", "Frontend", "JavaScript"]
+description: "함수형 컴포넌트를 위한 React Hooks 마스터하기"
+category: "frontend"
+featured: true
+coverImage: "/images/streaming-ssr.jpg"
+---
+
+# React Hooks 완벽 가이드
+
+React Hooks는 함수형 컴포넌트에서 상태 관리와 생명주기 기능을 사용할 수 있게 해주는 혁신적인 추가 기능입니다. 이 포스트에서는 주요 React Hooks의 사용법과 패턴을 자세히 알아보겠습니다.
+
+## 기본 Hooks
+
+### 1. useState
+
+상태 관리의 기본이 되는 Hook입니다:
+
+```jsx
+import { useState } from "react";
+
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>현재 카운트: {count}</p>
+      <button onClick={() => setCount(count + 1)}>증가</button>
+      <button onClick={() => setCount(count - 1)}>감소</button>
+      <button onClick={() => setCount(0)}>초기화</button>
+    </div>
+  );
+}
+```
+
+객체 형태의 상태를 관리할 때는 이전 상태를 함수형 업데이트로 처리하는 것이 좋습니다:
+
+```jsx
+const [user, setUser] = useState({ name: "", age: 0 });
+
+// 잘못된 방법 (이전 상태 속성이 유지되지 않음)
+setUser({ name: "홍길동" });
+
+// 올바른 방법 1 (수동으로 이전 상태 병합)
+setUser({ ...user, name: "홍길동" });
+
+// 올바른 방법 2 (함수형 업데이트)
+setUser((prevUser) => ({ ...prevUser, name: "홍길동" }));
+```
+
+### 2. useEffect
+
+컴포넌트의 생명주기와 관련된 작업을 처리합니다:
+
+```jsx
+import { useState, useEffect } from "react";
+
+function UserProfile({ userId }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchUser() {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/users/${userId}`);
+        const data = await response.json();
+        setUser(data);
+      } catch (error) {
+        console.error("사용자를 불러오는 중 오류 발생:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUser();
+
+    // 클린업 함수
+    return () => {
+      // 구독 취소, 타이머 정리 등...
+      console.log("컴포넌트 언마운트 또는 의존성 변경");
+    };
+  }, [userId]); // 의존성 배열
+
+  if (loading) return <div>로딩 중...</div>;
+  if (!user) return <div>사용자를 찾을 수 없습니다</div>;
+
+  return (
+    <div>
+      <h2>{user.name}</h2>
+      <p>이메일: {user.email}</p>
+    </div>
+  );
+}
+```
+
+**의존성 배열에 따른 동작**:
+
+- `[]`: 컴포넌트 마운트/언마운트 시에만 실행 (componentDidMount, componentWillUnmount)
+- `[value]`: value가 변경될 때마다 실행
+- 생략: 모든 렌더링 후 실행
+
+### 3. useContext
+
+컴포넌트 트리 전체에 데이터를 제공합니다:
+
+```jsx
+// ThemeContext.js
+import { createContext, useState } from "react";
+
+export const ThemeContext = createContext();
+
+export function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState("light");
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+// App.js
+import { ThemeProvider } from "./ThemeContext";
+import Header from "./Header";
+import Content from "./Content";
+
+function App() {
+  return (
+    <ThemeProvider>
+      <div className="app">
+        <Header />
+        <Content />
+      </div>
+    </ThemeProvider>
+  );
+}
+
+// Header.js
+import { useContext } from "react";
+import { ThemeContext } from "./ThemeContext";
+
+function Header() {
+  const { theme, toggleTheme } = useContext(ThemeContext);
+
+  return (
+    <header className={`header ${theme}`}>
+      <h1>내 앱</h1>
+      <button onClick={toggleTheme}>테마 변경 (현재: {theme})</button>
+    </header>
+  );
+}
+```
+
+## 추가 Hooks
+
+### 4. useReducer
+
+복잡한 상태 로직을 관리할 때 유용합니다:
+
+```jsx
+import { useReducer } from "react";
+
+// 리듀서 함수
+function todoReducer(state, action) {
+  switch (action.type) {
+    case "ADD_TODO":
+      return [
+        ...state,
+        {
+          id: Date.now(),
+          text: action.payload,
+          completed: false,
+        },
+      ];
+    case "TOGGLE_TODO":
+      return state.map((todo) =>
+        todo.id === action.payload
+          ? { ...todo, completed: !todo.completed }
+          : todo
+      );
+    case "DELETE_TODO":
+      return state.filter((todo) => todo.id !== action.payload);
+    default:
+      return state;
+  }
+}
+
+function TodoApp() {
+  const [todos, dispatch] = useReducer(todoReducer, []);
+  const [text, setText] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    dispatch({ type: "ADD_TODO", payload: text });
+    setText("");
+  };
+
+  return (
+    <div>
+      <form onSubmit={handleSubmit}>
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="할 일 추가..."
+        />
+        <button type="submit">추가</button>
+      </form>
+
+      <ul>
+        {todos.map((todo) => (
+          <li
+            key={todo.id}
+            style={{ textDecoration: todo.completed ? "line-through" : "none" }}
+          >
+            <span
+              onClick={() =>
+                dispatch({
+                  type: "TOGGLE_TODO",
+                  payload: todo.id,
+                })
+              }
+            >
+              {todo.text}
+            </span>
+            <button
+              onClick={() =>
+                dispatch({
+                  type: "DELETE_TODO",
+                  payload: todo.id,
+                })
+              }
+            >
+              삭제
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### 5. useCallback
+
+메모이제이션된 콜백 함수를 반환합니다. 의존성 값이 변경될 때만 함수를 재생성합니다:
+
+```jsx
+import { useState, useCallback } from "react";
+
+function SearchComponent() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+
+  // query가 변경될 때만 함수가 재생성됨
+  const handleSearch = useCallback(async () => {
+    if (!query.trim()) return;
+
+    try {
+      const response = await fetch(`/api/search?q=${query}`);
+      const data = await response.json();
+      setResults(data);
+    } catch (error) {
+      console.error("검색 중 오류 발생:", error);
+    }
+  }, [query]);
+
+  return (
+    <div>
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="검색어 입력..."
+      />
+      <button onClick={handleSearch}>검색</button>
+
+      <ResultsList results={results} onItemClick={handleSearch} />
+    </div>
+  );
+}
+
+// 최적화된 자식 컴포넌트
+const ResultsList = React.memo(({ results, onItemClick }) => {
+  return (
+    <ul>
+      {results.map((item) => (
+        <li key={item.id} onClick={onItemClick}>
+          {item.title}
+        </li>
+      ))}
+    </ul>
+  );
+});
+```
+
+### 6. useMemo
+
+계산 비용이 높은 값을 메모이제이션합니다:
+
+```jsx
+import { useState, useMemo } from "react";
+
+function ExpensiveCalculation({ list, filter }) {
+  const [count, setCount] = useState(0);
+
+  // list나 filter가 변경될 때만 계산을 다시 수행
+  const filteredAndSortedList = useMemo(() => {
+    console.log("비용이 높은 계산 수행 중...");
+
+    // 필터링
+    const filtered = list.filter((item) =>
+      item.name.toLowerCase().includes(filter.toLowerCase())
+    );
+
+    // 정렬 (비용이 높은 작업)
+    return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+  }, [list, filter]);
+
+  return (
+    <div>
+      <button onClick={() => setCount(count + 1)}>카운트 증가: {count}</button>
+
+      <ul>
+        {filteredAndSortedList.map((item) => (
+          <li key={item.id}>{item.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### 7. useRef
+
+리렌더링 사이에 값을 유지하거나 DOM 요소에 직접 접근할 때 사용합니다:
+
+```jsx
+import { useRef, useEffect, useState } from "react";
+
+function AutoFocusInput() {
+  const inputRef = useRef(null);
+  const prevValueRef = useRef("");
+  const [value, setValue] = useState("");
+  const renderCountRef = useRef(0);
+
+  // 마운트 시 input에 포커스
+  useEffect(() => {
+    inputRef.current.focus();
+  }, []);
+
+  // 값이 변경될 때마다 이전 값 저장
+  useEffect(() => {
+    prevValueRef.current = value;
+  }, [value]);
+
+  // 렌더링 횟수 추적
+  useEffect(() => {
+    renderCountRef.current += 1;
+  });
+
+  return (
+    <div>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="텍스트 입력..."
+      />
+      <p>현재 값: {value}</p>
+      <p>이전 값: {prevValueRef.current}</p>
+      <p>렌더링 횟수: {renderCountRef.current}</p>
+    </div>
+  );
+}
+```
+
+## 커스텀 Hooks 만들기
+
+재사용 가능한 로직을 추출하여 커스텀 Hook으로 만들 수 있습니다:
+
+```jsx
+// useLocalStorage.js
+import { useState, useEffect } from "react";
+
+function useLocalStorage(key, initialValue) {
+  // 초기 상태 설정
+  const [storedValue, setStoredValue] = useState(() => {
+    try {
+      // localStorage에서 값 가져오기
+      const item = window.localStorage.getItem(key);
+      // 값이 있으면 파싱, 없으면 initialValue 반환
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(error);
+      return initialValue;
+    }
+  });
+
+  // 값이 변경될 때마다 localStorage 업데이트
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(storedValue));
+    } catch (error) {
+      console.error(error);
+    }
+  }, [key, storedValue]);
+
+  return [storedValue, setStoredValue];
+}
+
+// 사용 예
+function SettingsForm() {
+  const [settings, setSettings] = useLocalStorage("app-settings", {
+    darkMode: false,
+    fontSize: 16,
+  });
+
+  return (
+    <div>
+      <h2>설정</h2>
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.darkMode}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                darkMode: e.target.checked,
+              })
+            }
+          />
+          다크 모드
+        </label>
+      </div>
+
+      <div>
+        <label>
+          글자 크기:
+          <select
+            value={settings.fontSize}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                fontSize: Number(e.target.value),
+              })
+            }
+          >
+            <option value={12}>작게</option>
+            <option value={16}>보통</option>
+            <option value={20}>크게</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+}
+```
+
+## Hook 규칙과 주의사항
+
+React Hooks를 사용할 때는 다음 규칙을 따라야 합니다:
+
+1. **최상위에서만 호출**: 반복문, 조건문, 중첩 함수 내에서 Hook을 호출하지 마세요.
+
+   ```jsx
+   // 잘못된 사용
+   function Counter() {
+     if (someCondition) {
+       const [count, setCount] = useState(0); // 조건부 Hook 호출!
+     }
+   }
+
+   // 올바른 사용
+   function Counter() {
+     const [count, setCount] = useState(0);
+
+     if (someCondition) {
+       // 여기서 count 사용
+     }
+   }
+   ```
+
+2. **React 함수 내에서만 호출**: React 함수 컴포넌트 또는 커스텀 Hook 내에서만 Hook을 호출하세요.
+
+3. **이름은 'use'로 시작**: 모든 커스텀 Hook은 이름이 'use'로 시작해야 합니다.
+
+## 고급 Hook 패턴
+
+### 조건부 Hook 호출 문제 해결하기
+
+조건부로 Hook을 사용해야 할 때는 다음과 같이 해결할 수 있습니다:
+
+```jsx
+function UserProfile({ isLoggedIn, userId }) {
+  // 기본 상태로 초기화
+  const [user, setUser] = useState(null);
+
+  // 조건부 로직을 useEffect 내부에 배치
+  useEffect(() => {
+    if (isLoggedIn && userId) {
+      // 로그인된 경우에만 데이터 가져오기
+      fetchUser(userId).then((data) => setUser(data));
+    } else {
+      // 로그인되지 않은 경우 상태 초기화
+      setUser(null);
+    }
+  }, [isLoggedIn, userId]);
+
+  // 조건부 렌더링
+  if (!isLoggedIn) {
+    return <div>로그인이 필요합니다</div>;
+  }
+
+  return <div>{user ? user.name : "로딩 중..."}</div>;
+}
+```
+
+### Hook 조합하기
+
+여러 Hook을 조합하여 복잡한 로직을 구현할 수 있습니다:
+
+```jsx
+function useUserData(userId) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadUser() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const data = await fetchUser(userId);
+        if (isMounted) {
+          setUser(data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    if (userId) {
+      loadUser();
+    } else {
+      setUser(null);
+      setLoading(false);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
+
+  return { user, loading, error };
+}
+
+// 사용 예
+function ProfilePage({ userId }) {
+  const { user, loading, error } = useUserData(userId);
+
+  if (loading) return <div>로딩 중...</div>;
+  if (error) return <div>오류: {error}</div>;
+  if (!user) return <div>사용자를 찾을 수 없습니다</div>;
+
+  return (
+    <div>
+      <h1>{user.name}</h1>
+      <p>{user.email}</p>
+    </div>
+  );
+}
+```
+
+## 결론
+
+React Hooks는 함수형 컴포넌트에서 다양한 기능을 구현할 수 있게 해주는 강력한 도구입니다. 기본 Hooks(useState, useEffect, useContext)부터 시작하여 추가 Hooks(useReducer, useCallback, useMemo, useRef)까지 마스터하면 더 효율적이고 재사용 가능한 React 컴포넌트를 만들 수 있습니다.
+
+커스텀 Hook을 통해 로직을 재사용하고, Hook 규칙을 준수하며 개발하면 깔끔하고 유지보수하기 쉬운 코드를 작성할 수 있습니다.
+
+다음 포스팅에서는 React 성능 최적화를 위한 고급 Hook 패턴에 대해 더 자세히 알아보겠습니다.
