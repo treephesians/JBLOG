@@ -3,7 +3,7 @@ import ThemeToggle from "./ThemeToggle";
 
 const Header = () => {
   return (
-    <div className="fixed top-0 left-0 right-0 z-10 bg-background py-3 flex justify-center">
+    <div className="fixed top-0 left-0 right-0 z-10 bg-background pt-3 flex justify-center">
       <header className="max-w-3xl w-full px-4 flex justify-between items-center border-b border-border pb-3">
         <div className="font-bold text-xl">
           <Link href="/">Baamm Blog</Link>
