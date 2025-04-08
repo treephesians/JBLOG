@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📝 개발 블로그 기획서
 
-## Getting Started
+## 1. 블로그 목적
+- **개발 성장 기록**: 나의 학습 과정, 트러블슈팅, 회고, 팁 등을 정리하여 성장의 흔적을 남긴다.
+- **정보 공유**: 다른 개발자들과 지식을 나누고, 나처럼 고민하는 사람에게 도움이 되길 바란다.
+- **퍼블릭 포트폴리오**: 실무 역량과 사고 과정을 보여주는 공간으로 활용한다.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 2. 메인 콘텐츠
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| 구분 | 설명 |
+|------|------|
+| **회고** | 프로젝트 또는 특정 시점에 대한 성찰, 느낀 점 |
+| **트러블슈팅** | 개발 중 발생한 문제 해결 기록 |
+| **개발 팁** | 코드 최적화, 라이브러리 사용법 등 유용한 팁 |
+| **사이드 프로젝트 소개** | 내가 진행한 프로젝트의 소개 및 배운 점 |
+| **자기소개 및 연락처** | 개발자 소개, 기술 스택, 소셜 링크 등 |
+| **자유 댓글 공간** | 방문자가 자유롭게 글을 남길 수 있는 공간 |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 3. 기술 스택 및 구조
 
-## Learn More
+### 🔧 기술 스택
+- **프레임워크**: Next.js (App Router)
+- **언어**: TypeScript
+- **스타일링**: Tailwind CSS
+- **콘텐츠 관리**: MDX
+- **검색 기능**: Fuse.js 또는 Algolia (선택적)
+- **댓글 시스템**: utterances or Disqus
+- **애널리틱스**: Google Analytics 또는 Amplitude
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 📁 폴더 구조 (예상)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+\`\`\`
+my-blog/
+├── app/
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── post/
+│   │   ├── page.tsx
+│   │   └── [slug]/page.tsx
+│   ├── project/page.tsx
+│   ├── about/page.tsx
+│   └── comment/page.tsx
+├── content/
+│   ├── posts/
+│   └── projects/
+├── components/
+│   ├── Header.tsx
+│   ├── ThemeToggle.tsx
+│   ├── PostCard.tsx
+│   └── CommentBox.tsx
+├── lib/
+├── styles/
+├── public/
+├── utils/
+\`\`\`
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 4. 주요 기능 및 화면
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| 기능 | 설명 |
+|------|------|
+| **다크모드** | `next-themes`를 활용한 테마 토글 |
+| **포스트 페이지** | 최신순 포스트 목록 + 상세 페이지 |
+| **프로젝트 소개 페이지** | 사이드 프로젝트 설명, 썸네일 포함 |
+| **About 페이지** | 나의 기술 스택, 소개, 연락 링크 |
+| **댓글 페이지** | 방문자들이 자유롭게 글을 남길 수 있는 방명록 |
+| **검색 기능** | 키워드 기반 포스트 검색 (Fuse.js 또는 Algolia) |
+| **반응형 UI** | 모바일 및 데스크탑에 최적화 |
+| **댓글 시스템** | utterances 또는 Disqus |
+| **애널리틱스** | Google Analytics or Amplitude 연동 |
+
+---
+
+## 5. 디자인 방향
+
+| 항목 | 내용 |
+|------|------|
+| **스타일** | 미니멀 & 깔끔한 레이아웃 |
+| **폰트** | sans-serif (예: Inter, Pretendard) |
+| **컬러** | 밝은/어두운 테마 지원, 퍼플 또는 블루 계열 포인트 |
+| **이미지** | 썸네일 및 아이콘은 필수만 최소화 |
+
+---
+
+## 6. 운영 계획
+- **작성 주기**: 주 1회 이상 포스팅
+- **작성 도구**: Notion 또는 VSCode에서 초안 작성 → MDX 변환
+- **배포 플랫폼**: Vercel
+- **버전 관리**: GitHub 사용, PR 기반 게시글 관리 가능
+
+---
+
+## ✅ 다음 단계
+
+1. `layout.tsx`에 기본 레이아웃 구성
+2. 헤더에 네비게이션: Post / Project / About / Comment / 다크모드 토글
+3. MDX 파싱 및 Post 리스트/상세 구현
+4. Theme 기능 추가
+5. 콘텐츠 추가 (글 1~2개, 프로젝트 소개 등)
