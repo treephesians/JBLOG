@@ -20,11 +20,13 @@ export async function generateMetadata({
   };
 }
 
-export default function PostDetailPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+interface PageProps {
+  params: {
+    slug: string;
+  };
+}
+
+export default async function PostDetailPage({ params }: PageProps) {
   const post = getPostBySlug(params.slug);
 
   if (!post) {
