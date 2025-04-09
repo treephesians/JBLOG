@@ -1,8 +1,10 @@
 import { getPostBySlug, getAllPosts } from "@/lib/posts";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import Image from "next/image";
 import { MDXRemote } from "next-mdx-remote/rsc";
+import PostHeader from "@/components/post/post-header";
+import TocContainer from "@/components/post/toc-container";
+import { extractTocFromMarkdown } from "@/lib/toc";
 
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
@@ -46,64 +48,44 @@ export default function PostPage({ params }: PostPageProps) {
     notFound();
   }
 
-  return (
-    <article className="prose prose-base dark:prose-invert max-w-3xl mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">{post.title}</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-4">
-          {new Date(post.date).toLocaleDateString("ko-KR", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
-        {post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-sm"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-        {post.coverImage && (
-          <div className="mb-6">
-            <Image
-              src={post.coverImage}
-              alt={post.title}
-              width={1000}
-              height={1000}
-              className="w-full h-auto rounded-lg object-cover"
-            />
-          </div>
-        )}
-      </div>
+  // TOC 아이템 추출
+  const tocItems = post.content ? extractTocFromMarkdown(post.content) : [];
 
-      {post.content && (
-        <MDXRemote
-          source={post.content}
-          options={{
-            parseFrontmatter: true,
-            mdxOptions: {
-              remarkPlugins: [remarkGfm, remarkBreaks],
-              rehypePlugins: [
-                rehypeSlug,
-                [
-                  rehypePrettyCode,
-                  {
-                    theme: "github-dark",
-                    keepBackground: false,
-                  },
-                ],
-              ],
-              format: "mdx",
-            },
-          }}
+  return (
+    <div className="relative max-w-5xl mx-auto">
+      <article className="prose prose-base dark:prose-invert max-w-3xl mx-auto py-8 px-4">
+        <PostHeader
+          title={post.title}
+          date={post.date}
+          tags={post.tags}
+          coverImage={post.coverImage || undefined}
         />
-      )}
-    </article>
+
+        {post.content && (
+          <MDXRemote
+            source={post.content}
+            options={{
+              parseFrontmatter: true,
+              mdxOptions: {
+                remarkPlugins: [remarkGfm, remarkBreaks],
+                rehypePlugins: [
+                  rehypeSlug,
+                  [
+                    rehypePrettyCode,
+                    {
+                      theme: "github-dark",
+                      keepBackground: false,
+                    },
+                  ],
+                ],
+                format: "mdx",
+              },
+            }}
+          />
+        )}
+      </article>
+
+      <TocContainer items={tocItems} />
+    </div>
   );
 }

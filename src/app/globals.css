@@ -169,3 +169,30 @@
       hover:prose-a:text-primary/90;
   }
 }
+
+/* TOC 스타일 */
+.toc {
+  position: relative;
+  z-index: 10;
+}
+
+.toc ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc a {
+  text-decoration: none;
+  color: inherit;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  display: block;
+}
+
+@media (max-width: 1023px) {
+  .toc-container {
+    display: none;
+  }
+}
