@@ -26,48 +26,48 @@ export function PostCard({ post }: PostCardProps) {
   });
 
   return (
-    <Card className="overflow-hidden transition-all w-full flex flex-col shadow-sm hover:shadow-md">
-      {hasImage ? (
-        <div className="relative w-full overflow-hidden pb-[52%]">
-          {post.coverImage && (
-            <Image
-              src={post.coverImage}
-              alt={post.title}
-              fill
-              className="object-cover transition-transform duration-300 hover:scale-105"
-            />
-          )}
-          <div className="absolute top-2 left-2">
+    <Link href={`/posts/${post.slug}`} className="block w-full">
+      <Card className="overflow-hidden transition-all w-full flex flex-col shadow-sm hover:shadow-lg group border hover:border-pink-300 dark:hover:border-primary/50 hover:translate-y-[-4px] duration-300">
+        {hasImage ? (
+          <div className="relative w-full overflow-hidden pb-[52%]">
+            {post.coverImage && (
+              <Image
+                src={post.coverImage}
+                alt={post.title}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            )}
+            <div className="absolute top-2 left-2">
+              <Badge variant="category">{post.category}</Badge>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center px-3 pt-3">
             <Badge variant="category">{post.category}</Badge>
           </div>
+        )}
+        <div className="flex flex-col">
+          <CardHeader className="p-3">
+            <CardTitle className="text-lg line-clamp-2">{post.title}</CardTitle>
+            <CardDescription className="text-xs">
+              {formattedDate}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <p className="text-sm line-clamp-2 text-muted-foreground">
+              {post.description}
+            </p>
+          </CardContent>
+          <CardFooter className="p-3 pt-0 flex flex-wrap gap-1">
+            {post.tags.map((tag) => (
+              <Badge key={tag} variant="tag">
+                {tag}
+              </Badge>
+            ))}
+          </CardFooter>
         </div>
-      ) : (
-        <div className="flex items-center px-3 pt-3">
-          <Badge variant="category">{post.category}</Badge>
-        </div>
-      )}
-      <div className="flex flex-col">
-        <CardHeader className="p-3">
-          <CardTitle className="text-lg line-clamp-2">
-            <Link href={`/posts/${post.slug}`} className="hover:underline">
-              {post.title}
-            </Link>
-          </CardTitle>
-          <CardDescription className="text-xs">{formattedDate}</CardDescription>
-        </CardHeader>
-        <CardContent className="p-3 pt-0">
-          <p className="text-sm line-clamp-2 text-muted-foreground">
-            {post.description}
-          </p>
-        </CardContent>
-        <CardFooter className="p-3 pt-0 flex flex-wrap gap-1">
-          {post.tags.map((tag) => (
-            <Badge key={tag} variant="tag">
-              {tag}
-            </Badge>
-          ))}
-        </CardFooter>
-      </div>
-    </Card>
+      </Card>
+    </Link>
   );
 }
