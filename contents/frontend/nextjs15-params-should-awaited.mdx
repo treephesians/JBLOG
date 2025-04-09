@@ -138,6 +138,44 @@ export async function generateStaticParams() {
 }
 ```
 
+## Vercel 배포 시 추가 타입 에러
+
+코드 실행은 잘 됐지만, Vercel에 배포할 때 또 다른 에러가 발생했어요:
+
+```
+Failed to compile.
+src/app/posts/[slug]/page.tsx
+Type error: Type 'PostPageProps' does not satisfy the constraint 'PageProps'.
+  Types of property 'params' are incompatible.
+    Type '{ slug: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+Next.js build worker exited with code: 1 and signal: null
+Error: Command "next build" exited with 1
+```
+
+이건 타입스크립트 타입 에러인데요, `PostPageProps` 인터페이스의 타입 정의가 Next.js 15의 변경사항과 맞지 않아서 발생한 문제였어요.
+
+### 타입 에러 해결하기
+
+이 문제를 해결하기 위해 `PostPageProps` 인터페이스도 수정해야 했어요:
+
+```tsx
+// 이전 타입 정의 (Next.js 14 이하)
+interface PostPageProps {
+  params: {
+    slug: string;
+  };
+}
+
+// 수정된 타입 정의 (Next.js 15)
+interface PostPageProps {
+  params: Promise<{
+    slug: string;
+  }>;
+}
+```
+
+이렇게 `params`가 Promise 타입이라는 것을 명시해주니 Vercel 배포 시 타입 에러가 해결되었어요!
+
 ## 정리
 
 Next.js 15에서 동적 라우트 매개변수를 사용할 때 기억해야 할 패턴은 다음과 같습니다:
@@ -153,6 +191,24 @@ const post = getPostBySlug(slug);
 // ✅ 올바른 방법
 const { slug } = await params;
 const post = getPostBySlug(slug);
+```
+
+그리고 타입스크립트를 사용하는 경우 인터페이스도 반드시 업데이트해야 해요:
+
+```tsx
+// ❌ 이전 인터페이스
+interface PostPageProps {
+  params: {
+    slug: string;
+  };
+}
+
+// ✅ 새 인터페이스
+interface PostPageProps {
+  params: Promise<{
+    slug: string;
+  }>;
+}
 ```
 
 이렇게 Next.js의 새 버전에 맞춰 코드를 수정하니 에러가 사라지고 페이지가 다시 정상적으로 렌더링되었어요!

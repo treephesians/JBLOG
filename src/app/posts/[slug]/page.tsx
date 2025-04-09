@@ -12,9 +12,9 @@ import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
 interface PostPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({
