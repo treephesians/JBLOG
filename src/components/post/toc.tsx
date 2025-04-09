@@ -196,7 +196,7 @@ const TOC: React.FC<TocProps> = ({ items }) => {
             key={item.id}
             className={`${item.level > 2 ? "pl-3" : ""} py-1 text-xs ${
               activeId === item.id
-                ? " text-pink-500 dark:text-white font-medium"
+                ? " text-pink-500 dark:text-white font-semibold"
                 : " text-gray-500 dark:text-gray-500"
             }`}
           >

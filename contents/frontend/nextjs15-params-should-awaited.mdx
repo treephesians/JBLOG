@@ -1,0 +1,162 @@
+---
+title: "Next.js 15에서 동적 라우팅 에러 해결하기"
+description: "Next.js 15에서 'params should be awaited' 에러를 해결한 경험 공유"
+date: "2024-04-09"
+tags: ["Next.js", "React", "트러블슈팅", "동적라우팅"]
+coverImage: "/images/nextjs15-params-should-awaited.png"
+---
+
+# Next.js 15에서 동적 라우팅 에러 해결하기
+
+안녕하세요! 오늘은 Next.js를 15 버전으로 업그레이드하고 마주친 에러와 그 해결 과정을 공유해볼게요. 개발하다 보면 새 버전으로 업그레이드할 때 이런저런 이슈가 발생하곤 하잖아요? 저도 다음과 같은 에러 메시지를 만나고 당황했답니다.
+
+## 갑자기 나타난 에러 메시지
+
+코드를 수정하고 페이지를 새로고침했는데, 콘솔에 다음과 같은 에러가 나타났어요.
+
+```
+Error: Route "/posts/[slug]" used `params.slug`. `params` should be awaited before using its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at PostPage (src/app/posts/[slug]/page.tsx:45:36)
+  43 |
+  44 | export default function PostPage({ params }: PostPageProps) {
+> 45 |   const post = getPostBySlug(params.slug);
+     |                                    ^
+  46 |
+  47 |   if (!post) {
+  48 |     notFound();
+```
+
+그리고 비슷한 에러가 `generateMetadata` 함수에서도 발생했습니다.
+
+```
+Error: Route "/posts/[slug]" used `params.slug`. `params` should be awaited before using its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Module.generateMetadata (src/app/posts/[slug]/page.tsx:23:36)
+  21 |   params,
+  22 | }: PostPageProps): Promise<Metadata> {
+> 23 |   const post = getPostBySlug(params.slug);
+     |                                    ^
+  24 |
+  25 |   if (!post) {
+  26 |     return {
+```
+
+음... 뭐가 문제일까요? 에러 메시지를 자세히 보니 **"`params` should be awaited before using its properties"** 라고 하네요. Next.js 15에서는 동적 라우트의 매개변수를 사용할 때 `params`를 먼저 await 해야 한다는 뜻인가 봐요!
+
+## 문제의 코드
+
+에러가 발생한 코드는 블로그의 포스트 페이지를 렌더링하는 부분이었어요. 기존 코드는 이렇게 생겼습니다:
+
+```tsx
+export async function generateMetadata({
+  params,
+}: PostPageProps): Promise<Metadata> {
+  const post = getPostBySlug(params.slug);
+
+  if (!post) {
+    return {
+      title: "포스트를 찾을 수 없습니다",
+    };
+  }
+
+  return {
+    title: post.title,
+    description: post.description,
+  };
+}
+
+export default function PostPage({ params }: PostPageProps) {
+  const post = getPostBySlug(params.slug);
+
+  if (!post) {
+    notFound();
+  }
+
+  // TOC 아이템 추출
+  const tocItems = post.content ? extractTocFromMarkdown(post.content) : [];
+
+  return (
+    // 렌더링 코드...
+  );
+}
+```
+
+## 해결 방법
+
+처음에는 이렇게 수정해봤어요:
+
+```tsx
+export async function generateMetadata({
+  params,
+}: PostPageProps): Promise<Metadata> {
+  const slug = await params.slug;
+  const post = getPostBySlug(slug);
+  // ...
+}
+
+export default async function PostPage({ params }: PostPageProps) {
+  const slug = await params.slug;
+  const post = getPostBySlug(slug);
+  // ...
+}
+```
+
+하지만 이 방법으로도 여전히 에러가 발생했어요. 좀 더 찾아보니 Next.js 15에서는 `params` 객체 자체를 await 해야 한다더라고요! 정확한 해결 방법은 다음과 같았습니다:
+
+```tsx
+export async function generateMetadata({
+  params,
+}: PostPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
+  // ...
+}
+
+export default async function PostPage({ params }: PostPageProps) {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
+  // ...
+}
+```
+
+`params` 객체 자체를 await 한 후에 구조 분해 할당으로 필요한 속성을 꺼내는 패턴이 올바른 방법이었어요!
+
+## 변경 사항 이해하기
+
+Next.js 15에서는 App Router에서 데이터 페칭 방식에 큰 변화가 있었나 봐요. 동적 라우트 매개변수가 이제 Promise 객체로 래핑되어 전달되기 때문에, 사용하기 전에 await로 풀어줘야 한답니다.
+
+또한 컴포넌트 함수와 데이터 페칭 함수들도 async로 선언해야 합니다:
+
+```tsx
+// 컴포넌트 함수를 async로 변경
+export default async function PostPage({ params }: PostPageProps) {
+  // ...
+}
+
+// generateStaticParams도 async로 변경
+export async function generateStaticParams() {
+  // ...
+}
+```
+
+## 정리
+
+Next.js 15에서 동적 라우트 매개변수를 사용할 때 기억해야 할 패턴은 다음과 같습니다:
+
+```tsx
+// ❌ 이제 더 이상 작동하지 않음
+const post = getPostBySlug(params.slug);
+
+// ❌ 이 방법도 올바르지 않음
+const slug = await params.slug;
+const post = getPostBySlug(slug);
+
+// ✅ 올바른 방법
+const { slug } = await params;
+const post = getPostBySlug(slug);
+```
+
+이렇게 Next.js의 새 버전에 맞춰 코드를 수정하니 에러가 사라지고 페이지가 다시 정상적으로 렌더링되었어요!
+
+이 변화는 아마 Next.js가 더 효율적인 데이터 페칭과 라우팅을 위해 도입한 것 같은데, 처음에는 좀 헷갈렸지만 결국 더 명확하고 일관된 API를 제공하는 것 같네요.
+
+여러분도 Next.js 15로 업그레이드하시면 이런 변경 사항을 염두에 두세요. 처음에는 약간의 마이그레이션 작업이 필요하겠지만, 결국 더 나은 성능과 개발 경험을 제공할 거라 생각해요.

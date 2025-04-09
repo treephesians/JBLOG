@@ -1,0 +1,500 @@
+---
+title: "Next.js, Mdx 블로그에 목차(TOC) 만들기"
+description: "서버 사이드 렌더링과 클라이언트 사이드 인터랙션을 모두 지원하는 목차 컴포넌트를 만드는 과정"
+date: "2024-04-09"
+tags: ["React", "Next.js", "TOC", "MDX", "Tailwind CSS"]
+---
+
+안녕하세요!
+여러분도 저처럼 긴 글을 읽을 때 '이 글이 어떤 내용을 담고 있지?' 하고 궁금해 하신 적 있으시죠?
+블로그 포스트에 목차(Table of Contents, TOC)가 있으면 내용을 한눈에 파악하고 원하는 부분으로 바로 이동할 수 있어서 정말 편리하더라구요.
+오늘은 제가 Next.js 15와 MDX로 만든 블로그에 TOC를 구현한 경험을 공유해볼게요!
+
+## 뭘 만들고 싶었냐면요...
+
+목차 컴포넌트를 만들기 전에 몇 가지 목표를 세웠어요:
+
+- 서버에서 마크다운 파싱해서 목차 데이터를 미리 준비하기 (SEO에도 좋겠죠?)
+- 사용자가 스크롤하면 현재 읽고 있는 부분이 하이라이트되는 효과 넣기
+- 목차 항목 클릭하면 부드럽게 해당 섹션으로 이동하기
+- 화면 작을 땐 목차 숨기고 큰 화면에서만 보이게 하기
+- 심플하고 깔끔한 디자인으로 만들기
+
+자, 이제 어떻게 만들었는지 단계별로 살펴볼게요!
+
+## 1. 필요한 패키지부터 설치해요
+
+먼저 마크다운 파싱하고 헤딩 ID 만드는 데 필요한 패키지들을 설치했어요:
+
+```bash
+npm install unified remark-parse mdast-util-to-string unist-util-visit github-slugger
+```
+
+이 패키지들이 각각 뭘 하는지 간단히 설명하자면:
+
+- **unified**: 여러 형식의 콘텐츠 변환해주는 도구
+- **remark-parse**: 마크다운을 파싱해서 구문 트리로 만들어줌
+- **mdast-util-to-string**: 마크다운 노드에서 텍스트만 뽑아내기
+- **unist-util-visit**: 구문 트리를 돌아다니며 원하는 노드 찾기
+- **github-slugger**: GitHub 스타일의 ID 생성기 (헤딩마다 고유 ID 만들 때 필요해요)
+
+## 2. TOC 데이터 추출 함수 만들기
+
+이제 마크다운에서 헤딩들을 찾아서 TOC 데이터를 만드는 함수를 작성했어요:
+
+```tsx
+// src/lib/toc.ts
+import { TocItem } from "@/components/toc/toc";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
+import { toString } from "mdast-util-to-string";
+import { visit } from "unist-util-visit";
+import GithubSlugger from "github-slugger";
+
+export function extractTocFromMarkdown(markdown: string): TocItem[] {
+  const tocItems: TocItem[] = [];
+  const slugger = new GithubSlugger();
+
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(markdown);
+
+  visit(tree, "heading", (node) => {
+    if (node.depth > 1 && node.depth < 5) {
+      // h2, h3, h4만 포함
+      const text = toString(node);
+      const id = slugger.slug(text);
+
+      tocItems.push({
+        id,
+        text,
+        level: node.depth,
+      });
+    }
+  });
+
+  return tocItems;
+}
+```
+
+이 함수는 마크다운을 파싱해서 h2, h3, h4 헤딩을 찾고, 각 헤딩의 id, 텍스트, 레벨 정보를 모아서 반환해요. 여기서 중요한 점은 rehype-slug 플러그인과 동일한 방식으로 ID를 생성하기 위해 github-slugger를 사용한 거예요. 이렇게 하면 나중에 헤딩 ID와 TOC 항목 ID가 정확히 일치하게 돼요!
+
+## 3. 이제 진짜 TOC 컴포넌트 만들기
+
+이제 실제 TOC UI를 보여줄 컴포넌트를 만들어 볼게요. 이 부분이 가장 복잡했지만, 천천히 따라와 보세요:
+
+```tsx
+// src/components/toc/toc.tsx
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+
+export interface TocItem {
+  id: string;
+  text: string;
+  level: number;
+}
+
+interface TocProps {
+  items: TocItem[];
+}
+
+const TOC: React.FC<TocProps> = ({ items }) => {
+  // 첫 번째 항목의 ID로 초기화, 항목이 있는 경우
+  const [activeId, setActiveId] = useState<string>(
+    items.length > 0 ? items[0].id : ""
+  );
+
+  // 헤더 높이를 보정하기 위한 오프셋 (px)
+  const SCROLL_OFFSET = 80;
+
+  // 스크롤 핸들러 함수
+  const handleItemClick = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    const element = document.getElementById(id);
+    if (element) {
+      // 현재 스크롤 위치 저장
+      const currentPos = window.scrollY;
+
+      // 요소의 위치 계산 (헤더 높이 고려)
+      const elementPos =
+        element.getBoundingClientRect().top + currentPos - SCROLL_OFFSET;
+
+      // 부드러운 스크롤 적용
+      window.scrollTo({
+        top: elementPos,
+        behavior: "smooth",
+      });
+
+      // 활성화된 항목 변경
+      setActiveId(id);
+    }
+  };
+
+  useEffect(() => {
+    // 항목이 변경되었을 때 첫 번째 항목으로 초기화
+    if (items.length > 0 && !activeId) {
+      setActiveId(items[0].id);
+    }
+
+    // 헤딩 요소의 가시성과 위치를 추적하는 객체
+    const headingElementsMap = new Map<
+      string,
+      {
+        element: HTMLElement;
+        visible: boolean;
+        rect?: DOMRect;
+      }
+    >();
+
+    // 가장 적절한 활성 헤딩을 결정하는 함수
+    const determineActiveHeading = () => {
+      // 모든 헤딩 요소의 현재 위치를 업데이트
+      headingElementsMap.forEach((data) => {
+        data.rect = data.element.getBoundingClientRect();
+      });
+
+      // 화면에 보이는 헤딩 요소들을 가져옴
+      const visibleHeadings = Array.from(headingElementsMap.entries())
+        .filter(([, data]) => data.visible)
+        .sort((a, b) => {
+          // 화면 상단에 가장 가까운 헤딩을 찾음
+          const aTop = a[1].rect?.top || 0;
+          const bTop = b[1].rect?.top || 0;
+
+          // 상단에서의 거리가 비슷하면 더 위에 있는 섹션을 우선시
+          if (Math.abs(aTop - bTop) < 30) {
+            return (
+              items.findIndex((item) => item.id === a[0]) -
+              items.findIndex((item) => item.id === b[0])
+            );
+          }
+
+          return aTop - bTop;
+        });
+
+      // 가시적인 헤딩이 있으면 첫 번째 헤딩을 활성화
+      if (visibleHeadings.length > 0) {
+        setActiveId(visibleHeadings[0][0]);
+      }
+    };
+
+    // 마지막 섹션에 대한 특별 처리
+    const handleScroll = () => {
+      // 페이지 끝에 도달했는지 확인
+      const isAtBottom =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
+
+      if (isAtBottom && items.length > 0) {
+        // 페이지 끝에 도달하면 마지막 항목 활성화
+        setActiveId(items[items.length - 1].id);
+        return;
+      }
+
+      // 최적화: 스크롤 이벤트에서 throttling 적용
+      if (!window.requestAnimationFrame) {
+        determineActiveHeading();
+      } else {
+        window.requestAnimationFrame(determineActiveHeading);
+      }
+    };
+
+    // 헤딩 요소의 가시성을 추적하는 IntersectionObserver
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // 각 헤딩 요소의 가시성 상태 업데이트
+        entries.forEach((entry) => {
+          const id = entry.target.id;
+          const data = headingElementsMap.get(id);
+          if (data) {
+            data.visible = entry.isIntersecting;
+            data.rect = entry.boundingClientRect;
+          }
+        });
+
+        // 활성 헤딩 결정
+        determineActiveHeading();
+      },
+      {
+        // 헤딩 요소가 화면에 조금만 보여도 감지하도록 설정
+        rootMargin: "-10% 0px -70% 0px",
+        threshold: [0, 0.1, 0.5, 1], // 여러 지점에서 감지
+      }
+    );
+
+    // 모든 헤딩 엘리먼트를 맵에 추가하고 관찰 시작
+    items.forEach((item) => {
+      const element = document.getElementById(item.id);
+      if (element) {
+        headingElementsMap.set(item.id, {
+          element,
+          visible: false,
+        });
+        observer.observe(element);
+      }
+    });
+
+    // URL 해시가 있는 경우 해당 위치로 스크롤
+    if (window.location.hash) {
+      const id = window.location.hash.substring(1);
+      const element = document.getElementById(id);
+      if (element) {
+        // 약간의 지연 후 스크롤 (렌더링이 완료된 후)
+        setTimeout(() => {
+          const elementPos =
+            element.getBoundingClientRect().top +
+            window.scrollY -
+            SCROLL_OFFSET;
+          window.scrollTo({ top: elementPos, behavior: "smooth" });
+          setActiveId(id);
+        }, 100);
+      }
+    }
+
+    // 스크롤 이벤트 리스너 추가
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      items.forEach((item) => {
+        const element = document.getElementById(item.id);
+        if (element) {
+          observer.unobserve(element);
+        }
+      });
+
+      // 스크롤 이벤트 리스너 제거
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [items, activeId, SCROLL_OFFSET]);
+
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <nav className="toc hidden xl:block">
+      <h2 className="text-xs font-semibold mb-2 text-gray-500 dark:text-gray-400">
+        On this page
+      </h2>
+      <ul className="space-y-1">
+        {items.map((item) => (
+          <li
+            key={item.id}
+            className={`${item.level > 2 ? "pl-2" : ""} py-1 text-[10px] ${
+              activeId === item.id
+                ? "text-pink-500 font-medium"
+                : "text-gray-600 dark:text-gray-400"
+            }`}
+          >
+            <Link
+              href={`#${item.id}`}
+              className={`block pl-1 hover:text-pink-500 transition-colors`}
+              onClick={(e) => handleItemClick(e, item.id)}
+            >
+              {item.text}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+};
+
+export default TOC;
+```
+
+우와, 좀 길죠? 하지만 실제로 하는 일은 크게 네 가지예요:
+
+1. **현재 섹션 추적하기**: IntersectionObserver API를 사용해서 현재 화면에 보이는 헤딩을 찾아요.
+2. **스크롤에 따라 활성화 표시하기**: 스크롤 위치에 따라 현재 읽고 있는 섹션을 목차에서 강조해요.
+3. **클릭하면 이동하기**: 목차 항목 클릭하면 부드럽게 해당 섹션으로 스크롤해요.
+4. **URL 해시 처리하기**: URL에 #section-1 같은 해시가 있으면 거기로 바로 이동해요.
+
+처음엔 이 기능들 구현하는 게 살짝 어려웠지만, IntersectionObserver API와 스크롤 이벤트를 활용하니 생각보다 잘 동작하더라구요!
+
+## 4. TOC 컨테이너 만들기
+
+이제 TOC를 페이지에 배치할 컨테이너 컴포넌트를 만들어요:
+
+```tsx
+// src/components/toc/toc-container.tsx
+import React from "react";
+import TOC, { TocItem } from "./toc";
+
+interface TocContainerProps {
+  items: TocItem[];
+}
+
+const TocContainer: React.FC<TocContainerProps> = ({ items }) => {
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="hidden xl:block fixed right-4 top-32 w-56">
+      <div className="p-4">
+        <TOC items={items} />
+      </div>
+    </div>
+  );
+};
+
+export default TocContainer;
+```
+
+이건 간단해요! TOC를 화면 오른쪽에 고정시키고, 큰 화면(xl - 1280px 이상)에서만 보이게 만드는 역할이에요.
+
+## 5. 스타일 추가하기
+
+전역 CSS 파일에 TOC 관련 스타일도 추가했어요:
+
+```css
+/* src/app/globals.css */
+
+/* TOC 스타일 */
+.toc {
+  position: relative;
+  z-index: 10;
+}
+
+.toc ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc a {
+  text-decoration: none;
+  color: inherit;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  display: block;
+}
+
+@media (max-width: 1023px) {
+  .toc-container {
+    display: none;
+  }
+}
+```
+
+이렇게 하면 목차가 깔끔하게 보이고, 작은 화면에서는 자동으로 숨겨져요.
+
+## 6. 포스트 페이지에 TOC 넣기
+
+마지막으로, 블로그 포스트 페이지에 TOC를 추가했어요:
+
+```tsx
+// src/app/posts/[slug]/page.tsx
+import { getPostBySlug, getAllPosts } from "@/lib/posts";
+import { notFound } from "next/navigation";
+import { Metadata } from "next";
+import { MDXRemote } from "next-mdx-remote/rsc";
+import PostHeader from "@/components/post/post-header";
+import TocContainer from "@/components/post/toc-container";
+import { extractTocFromMarkdown } from "@/lib/toc";
+
+import rehypePrettyCode from "rehype-pretty-code";
+import rehypeSlug from "rehype-slug";
+import remarkBreaks from "remark-breaks";
+import remarkGfm from "remark-gfm";
+
+// ... 다른 코드 생략 ...
+
+export default function PostPage({ params }: PostPageProps) {
+  const post = getPostBySlug(params.slug);
+
+  if (!post) {
+    notFound();
+  }
+
+  // TOC 아이템 추출
+  const tocItems = post.content ? extractTocFromMarkdown(post.content) : [];
+
+  return (
+    <div className="relative max-w-5xl mx-auto">
+      <article className="prose prose-base dark:prose-invert max-w-3xl mx-auto py-8 px-4">
+        <PostHeader
+          title={post.title}
+          date={post.date}
+          tags={post.tags}
+          coverImage={post.coverImage || undefined}
+        />
+
+        {post.content && (
+          <MDXRemote
+            source={post.content}
+            options={{
+              parseFrontmatter: true,
+              mdxOptions: {
+                remarkPlugins: [remarkGfm, remarkBreaks],
+                rehypePlugins: [
+                  rehypeSlug,
+                  [
+                    rehypePrettyCode,
+                    {
+                      theme: "github-dark",
+                      keepBackground: false,
+                    },
+                  ],
+                ],
+                format: "mdx",
+              },
+            }}
+          />
+        )}
+      </article>
+
+      <TocContainer items={tocItems} />
+    </div>
+  );
+}
+```
+
+이 코드는 마크다운 콘텐츠에서 TOC 항목을 추출해서 TocContainer에 전달해요. 이렇게 하면 서버에서 렌더링할 때 이미 TOC 데이터가 준비되어 있어서 초기 로딩 시에도 목차가 바로 보여요!
+
+## 개발하면서 만난 문제들과 해결책
+
+### 1. 같은 제목이 여러 개 있으면 ID가 중복되는 문제
+
+마크다운에 같은 텍스트의 헤딩이 여러 개 있으면 같은 ID가 생겨서 이런 에러가 났어요:
+
+```
+Encountered two children with the same key. Keys should be unique.
+```
+
+**해결책**: `github-slugger` 라이브러리를 사용했더니 해결됐어요! 이 라이브러리는 같은 텍스트가 나와도 자동으로 `-1`, `-2` 같은 접미사를 붙여서 고유 ID를 만들어 줘요.
+
+### 2. 짧은 섹션에서 TOC 활성화가 이상하게 동작하는 문제
+
+짧은 섹션이 여러 개 있으면 스크롤할 때 활성 항목이 막 왔다갔다 하는 문제가 있었어요.
+
+**해결책**:
+
+- IntersectionObserver 설정을 조정했어요 (rootMargin, threshold 값)
+- 여러 헤딩이 화면에 보일 때 어떤 헤딩을 활성화할지 결정하는 로직을 추가했어요
+- 화면 상단에 가장 가까운 헤딩을 우선적으로 활성화하게 했어요
+- 글 끝에 도달했을 때는 마지막 항목이 활성화되게 특별 처리했어요
+
+### 3. 클릭해서 이동할 때 헤더에 가려지는 문제
+
+목차 항목을 클릭했을 때 헤딩이 고정 헤더에 가려지는 문제가 있었어요.
+
+**해결책**:
+
+- 스크롤 위치에 오프셋을 적용해서 헤더 높이를 고려했어요
+- `scrollIntoView()` 대신 `window.scrollTo()`를 써서 위치를 세밀하게 조절했어요
+- `behavior: "smooth"` 옵션으로 부드럽게 스크롤되게 했어요
+
+## 결론
+
+휴~ 생각보다 좀 복잡했지만, 결국 Next.js 블로그에 멋진 목차 컴포넌트를 만들었어요! 이 컴포넌트는 이런 장점들이 있답니다:
+
+1. **서버에서 미리 준비해요** - SEO에도 좋고 초기 로딩도 빨라요
+2. **사용자와 인터랙션해요** - 스크롤하면 현재 위치 표시해주고 클릭하면 이동해요
+3. **반응형이에요** - 화면 작을 땐 알아서 숨겨요
+4. **접근성이 좋아요** - 키보드로도 탐색할 수 있고 HTML 구조도 시맨틱해요
+5. **깔끔해요** - 콘텐츠 읽는 데 방해되지 않게 디자인했어요
+
+이 컴포넌트는 어떤 Next.js 블로그에도 쉽게 넣을 수 있어요! 여러분도 한번 시도해 보세요!
