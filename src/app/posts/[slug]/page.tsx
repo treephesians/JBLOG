@@ -2,8 +2,12 @@ import { getPostBySlug, getAllPosts } from "@/lib/posts";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import Image from "next/image";
-import MdxLayout from "@/components/post/mdx-layout";
 import { MDXRemote } from "next-mdx-remote/rsc";
+
+import rehypePrettyCode from "rehype-pretty-code";
+import rehypeSlug from "rehype-slug";
+import remarkBreaks from "remark-breaks";
+import remarkGfm from "remark-gfm";
 
 interface PostPageProps {
   params: {
@@ -43,10 +47,10 @@ export default function PostPage({ params }: PostPageProps) {
   }
 
   return (
-    <article className="max-w-3xl mx-auto py-8 px-4">
+    <article className="prose prose-base dark:prose-invert max-w-3xl mx-auto py-8 px-4">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">{post.title}</h1>
-        <p className="text-gray-500 mb-4">
+        <p className="text-gray-500 dark:text-gray-400 mb-4">
           {new Date(post.date).toLocaleDateString("ko-KR", {
             year: "numeric",
             month: "long",
@@ -58,7 +62,7 @@ export default function PostPage({ params }: PostPageProps) {
             {post.tags.map((tag) => (
               <span
                 key={tag}
-                className="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm"
+                className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-sm"
               >
                 {tag}
               </span>
@@ -78,9 +82,28 @@ export default function PostPage({ params }: PostPageProps) {
         )}
       </div>
 
-      <MdxLayout>
-        {post.content && <MDXRemote source={post.content} />}
-      </MdxLayout>
+      {post.content && (
+        <MDXRemote
+          source={post.content}
+          options={{
+            parseFrontmatter: true,
+            mdxOptions: {
+              remarkPlugins: [remarkGfm, remarkBreaks],
+              rehypePlugins: [
+                rehypeSlug,
+                [
+                  rehypePrettyCode,
+                  {
+                    theme: "github-dark",
+                    keepBackground: false,
+                  },
+                ],
+              ],
+              format: "mdx",
+            },
+          }}
+        />
+      )}
     </article>
   );
 }

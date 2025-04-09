@@ -120,4 +120,52 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Prose styles for light mode */
+  .prose {
+    @apply text-foreground
+      prose-headings:text-foreground
+      prose-h1:text-foreground
+      prose-h2:text-foreground 
+      prose-h3:text-foreground
+      prose-h4:text-foreground
+      prose-p:text-foreground
+      prose-strong:text-foreground
+      prose-ol:text-foreground
+      prose-ul:text-foreground
+      prose-li:text-foreground
+      prose-blockquote:text-foreground/80
+      prose-pre:bg-secondary
+      prose-pre:border
+      prose-pre:border-border
+      prose-code:text-primary
+      prose-code:before:content-none
+      prose-code:after:content-none
+      prose-a:text-primary
+      prose-a:no-underline
+      prose-a:font-normal
+      hover:prose-a:text-primary/90
+      prose-img:rounded-md;
+  }
+
+  /* Prose styles for dark mode */
+  .dark .prose {
+    @apply prose-headings:text-foreground
+      prose-h1:text-foreground
+      prose-h2:text-foreground 
+      prose-h3:text-foreground
+      prose-h4:text-foreground
+      prose-p:text-foreground
+      prose-strong:text-foreground
+      prose-ol:text-foreground
+      prose-ul:text-foreground
+      prose-li:text-foreground
+      prose-blockquote:text-foreground/80
+      prose-pre:bg-secondary
+      prose-pre:border
+      prose-pre:border-border/30
+      prose-code:text-primary
+      prose-a:text-primary
+      hover:prose-a:text-primary/90;
+  }
 }
