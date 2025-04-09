@@ -7,7 +7,7 @@ import * as THREE from "three";
 
 function IDBadge() {
   const groupRef = useRef<THREE.Group>(null!);
-  const profileTexture = useTexture("/images/streaming-ssr.jpg");
+  const profileTexture = useTexture("/images/me.jpg");
 
   // 애니메이션(살짝 흔들 + 회전)
   useFrame((state) => {

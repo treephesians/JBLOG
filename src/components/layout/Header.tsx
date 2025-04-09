@@ -19,18 +19,20 @@ const Header = () => {
                   posts
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link
                   href="/project"
                   className="hover:text-stone-600 transition-colors"
                 >
                   project
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link
-                  href="/about"
+                  href="https://www.figma.com/design/EH1r3cyKDgMXN2Lh8cshq0/resume_junbeom?node-id=0-1&t=ZAJu1Q4hIMATPaHb-1"
                   className="hover:text-stone-600 transition-colors"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   about
                 </Link>
