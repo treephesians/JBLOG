@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
 
 interface PostHeaderProps {
   title: string;
@@ -15,8 +16,10 @@ export default function PostHeader({
 }: PostHeaderProps) {
   return (
     <div className="mb-8">
-      <h1 className="text-4xl font-bold mb-2">{title}</h1>
-      <p className="text-gray-500 dark:text-gray-400 mb-4">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
+        {title}
+      </h1>
+      <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-4">
         {new Date(date).toLocaleDateString("ko-KR", {
           year: "numeric",
           month: "long",
@@ -24,14 +27,11 @@ export default function PostHeader({
         })}
       </p>
       {tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-1">
           {tags.map((tag) => (
-            <span
-              key={tag}
-              className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-sm"
-            >
+            <Badge key={tag} variant="tag">
               {tag}
-            </span>
+            </Badge>
           ))}
         </div>
       )}

@@ -19,7 +19,7 @@ export default function AboutPage() {
               suffix="를 좋아하는"
             />
             <TypewriterEffect
-              texts={["박준범", "준뱀", "Jbaamm"]}
+              texts={["박준범", "준봄", "Junbeom", "Jbaamm"]}
               speed={80}
               deleteSpeed={40}
               prefix="개발자 "
@@ -122,21 +122,26 @@ export default function AboutPage() {
       <TimelineSection title="Activity">
         <TimelineItem
           date="2024.04 - 2024.11"
-          title="소프트웨어 마에스트로 15기"
+          title="소프트웨어 마에스트로 15th"
           subtitle="과학기술정보통신부 주관 IT인재 양성 프로그램, PrayU 서비스 런칭"
         />
 
         <TimelineItem
           date="2022.08 - 2023.02"
-          title="42서울 8기"
+          title="42서울 8th"
           subtitle="피어 투 피어의 코드 리뷰로 동료들과 컴퓨터공학의 전반적인 지식 학습"
+        />
+
+        <TimelineItem
+          date="2022.08 - 2022.08"
+          title="서울시 IoT 공공데이터 해커톤 - 서울시장상"
+          subtitle="전기차 충전 소요 시간 예측 모델 및 앱 서비스 개발"
         />
 
         <TimelineItem
           date="2022.01 - 2022.06"
           title="SKKU Graphics Lab"
           subtitle="OpenGL을 활용한 저지연 데이터 처리 사이의 연결, GPU 쉐이더 최적화 연구"
-          link
           isLast={true}
         />
       </TimelineSection>

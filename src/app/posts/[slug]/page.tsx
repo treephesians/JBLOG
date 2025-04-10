@@ -55,7 +55,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
   return (
     <div className="relative max-w-5xl mx-auto">
-      <article className="prose prose-base dark:prose-invert max-w-3xl mx-auto py-8 px-4">
+      <article className="prose prose-sm sm:prose-base dark:prose-invert w-full max-w-[calc(100vw-2rem)] sm:max-w-2xl md:max-w-3xl mx-auto py-6 px-1">
         <PostHeader
           title={post.title}
           date={post.date}

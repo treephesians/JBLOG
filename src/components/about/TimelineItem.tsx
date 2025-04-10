@@ -18,10 +18,10 @@ const TimelineItem: FC<TimelineItemProps> = ({
     <div className="flex group">
       <div className="relative flex-grow pl-8">
         {/* 원과 선 */}
-        <div className="absolute left-0 top-[10px] w-3 h-3 rounded-full border-2 border-gray-400 dark:border-border bg-background transition-colors"></div>
+        <div className="absolute left-0 top-1 w-3 h-3 rounded-full border-2 border-gray-400 dark:border-border bg-background transition-colors"></div>
         {!isLast && (
           <div
-            className="absolute left-[5.5px] top-[22px] bottom-0 w-0.5 bg-gray-300 dark:bg-border"
+            className="absolute left-[5.5px] top-[16px] bottom-0 w-0.5 bg-gray-300 dark:bg-border"
             style={{ height: "calc(100% + 2rem)" }}
           ></div>
         )}
