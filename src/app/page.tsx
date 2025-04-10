@@ -76,7 +76,10 @@ function NameText({ text, position, fontSize = 0.1 }: NameTextProps) {
 
 export default function Home() {
   return (
-    <div style={{ height: "800px" }}>
+    <div
+      className="w-full -mx-4 md:-mx-0 md:w-screen md:max-w-none md:relative md:left-1/2 md:right-1/2 md:-translate-x-1/2"
+      style={{ height: "800px" }}
+    >
       <Canvas
         gl={{ alpha: true }}
         camera={{ position: [0, 0, 3], fov: 50 }}
