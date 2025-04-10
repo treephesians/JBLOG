@@ -6,9 +6,10 @@ import Link from "next/link";
 
 export default function AboutPage() {
   return (
-    <main className="py-6 sm:py-10 px-4 sm:px-6 w-full max-w-3xl mx-auto">
-      <section className="flex flex-col md:flex-row justify-between gap-6">
-        <div className="w-full md:w-1/2">
+    <main className="py-6 sm:py-10 p-4 sm:p-6 w-full max-w-3xl mx-auto">
+      <section className="relative">
+        {/* 텍스트 콘텐츠 */}
+        <div className="w-full md:w-1/2 pr-0 md:pr-4">
           <div className="flex flex-col text-2xl sm:text-3xl md:text-4xl font-light gap-2 sm:gap-3">
             <p>안녕하세요😄</p>
             <TypewriterEffect
@@ -32,7 +33,7 @@ export default function AboutPage() {
                 href="https://github.com/treephesians"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1 rounded-md bg-black text-white text-sm hover:bg-gray-700 transition-colors"
+                className="inline-flex items-center p-3 py-1 rounded-md bg-black text-white text-sm hover:bg-gray-700 transition-colors"
               >
                 <svg
                   className="w-4 h-4 mr-2"
@@ -47,7 +48,7 @@ export default function AboutPage() {
                 href="https://www.figma.com/design/EH1r3cyKDgMXN2Lh8cshq0/resume_junbeom?node-id=0-1&t=aX6u2V3owuhbpnRl-1"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/80 transition-colors"
+                className="inline-flex items-center p-3 py-1 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/80 transition-colors"
               >
                 <svg
                   className="w-4 h-4 mr-2"
@@ -73,28 +74,30 @@ export default function AboutPage() {
                 <h2 className="text-sm font-light text-gray-600 dark:text-muted-foreground">
                   Email.
                 </h2>
-                <p className="text-xs">ephesi4ns623@gmail.com</p>
+                <p className="text-xs font-light">ephesi4ns623@gmail.com</p>
               </div>
 
               <div>
                 <h2 className="text-sm font-light text-gray-600 dark:text-muted-foreground">
                   Residence.
                 </h2>
-                <p className="text-xs">Seoul, South Korea</p>
+                <p className="text-xs font-light">Seoul, South Korea</p>
               </div>
 
               <div>
                 <h2 className="text-sm font-light text-gray-600 dark:text-muted-foreground">
                   BachelorDegree.
                 </h2>
-                <p className="text-xs">
+                <p className="text-xs font-light">
                   Sungkyunkwan Univ. Math & Computer Engineering
                 </p>
               </div>
             </div>
           </div>
         </div>
-        <div className="w-full md:w-1/2 h-[220px] sm:h-[280px] md:h-[350px] relative mt-4 md:mt-0">
+
+        {/* 이미지 - PC 화면에서는 고정 위치 */}
+        <div className="hidden md:block absolute top-0 right-0 w-1/2 h-[350px]">
           <Image
             src="/panda.png"
             alt="Panda"
@@ -102,16 +105,17 @@ export default function AboutPage() {
             className="object-contain"
             priority
           />
-          {/* <div className="absolute bottom-[30%] md:bottom-[25%] left-1/2 -translate-x-1/2 z-10">
-            <a
-              href="https://www.buymeacoffee.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-gray-800 text-yellow-400 px-5 py-2 rounded-md font-bold hover:bg-gray-700 transition-colors text-sm"
-            >
-              BuyMeACoffee☕
-            </a>
-          </div> */}
+        </div>
+
+        {/* 이미지 - 모바일 화면용 */}
+        <div className="block md:hidden w-full h-[220px] sm:h-[280px] relative mt-6">
+          <Image
+            src="/panda.png"
+            alt="Panda"
+            fill
+            className="object-contain"
+            priority
+          />
         </div>
       </section>
 
