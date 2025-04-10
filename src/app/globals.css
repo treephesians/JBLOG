@@ -44,6 +44,16 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
 :root {
   --radius: 0.625rem;
   --card: oklch(1 0 0);

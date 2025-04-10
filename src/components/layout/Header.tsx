@@ -29,10 +29,8 @@ const Header = () => {
               </li> */}
               <li>
                 <Link
-                  href="https://www.figma.com/design/EH1r3cyKDgMXN2Lh8cshq0/resume_junbeom?node-id=0-1&t=ZAJu1Q4hIMATPaHb-1"
+                  href="/about"
                   className="hover:text-stone-600 transition-colors"
-                  target="_blank"
-                  rel="noopener noreferrer"
                 >
                   about
                 </Link>
