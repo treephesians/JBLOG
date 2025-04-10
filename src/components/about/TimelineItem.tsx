@@ -26,8 +26,8 @@ const TimelineItem: FC<TimelineItemProps> = ({
           ></div>
         )}
 
-        <div className="flex">
-          <div className="w-24 sm:w-32 md:w-64 shrink-0 text-sm text-muted-foreground font-light pt-0.5">
+        <div className="flex flex-col sm:flex-row">
+          <div className="mb-1 sm:mb-0 sm:w-24 md:w-32 lg:w-40 shrink-0 text-sm text-muted-foreground font-light">
             {date}
           </div>
 

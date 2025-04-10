@@ -77,8 +77,13 @@ function NameText({ text, position, fontSize = 0.1 }: NameTextProps) {
 export default function Home() {
   return (
     <div
-      className="w-full -mx-4 md:-mx-0 md:w-screen md:max-w-none md:relative md:left-1/2 md:right-1/2 md:-translate-x-1/2"
-      style={{ height: "800px" }}
+      className="w-full h-[600px] md:h-[800px] relative"
+      style={{
+        width: "100vw",
+        maxWidth: "100vw",
+        marginLeft: "calc(-50vw + 50%)",
+        marginRight: "calc(-50vw + 50%)",
+      }}
     >
       <Canvas
         gl={{ alpha: true }}

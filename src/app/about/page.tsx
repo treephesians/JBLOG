@@ -6,10 +6,10 @@ import Link from "next/link";
 
 export default function AboutPage() {
   return (
-    <main className="py-10 w-3xl max-w-3xl mx-auto">
-      <section className="flex flex-col md:flex-row justify-between">
-        <div className="md:w-1/2">
-          <div className="flex flex-col text-3xl md:text-4xl font-light gap-3">
+    <main className="py-6 sm:py-10 px-4 sm:px-6 w-full max-w-3xl mx-auto">
+      <section className="flex flex-col md:flex-row justify-between gap-6">
+        <div className="w-full md:w-1/2">
+          <div className="flex flex-col text-2xl sm:text-3xl md:text-4xl font-light gap-2 sm:gap-3">
             <p>안녕하세요😄</p>
             <TypewriterEffect
               texts={["Typescript", "React", "Next.js"]}
@@ -26,8 +26,8 @@ export default function AboutPage() {
             />
           </div>
 
-          <div className="mt-8 grid gap-5">
-            <div className="flex items-center gap-3">
+          <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5">
+            <div className="flex items-center gap-3 flex-wrap">
               <Link
                 href="https://github.com/treephesians"
                 target="_blank"
@@ -68,31 +68,33 @@ export default function AboutPage() {
               </Link>
             </div>
 
-            <div>
-              <h2 className="text-sm font-light text-gray-600 dark:text-muted-foreground">
-                Email.
-              </h2>
-              <p className="text-xs">ephesi4ns623@gmail.com</p>
-            </div>
+            <div className="grid gap-4">
+              <div>
+                <h2 className="text-sm font-light text-gray-600 dark:text-muted-foreground">
+                  Email.
+                </h2>
+                <p className="text-xs">ephesi4ns623@gmail.com</p>
+              </div>
 
-            <div>
-              <h2 className="text-sm font-light text-gray-600 dark:text-muted-foreground">
-                Residence.
-              </h2>
-              <p className="text-xs">Seoul, South Korea</p>
-            </div>
+              <div>
+                <h2 className="text-sm font-light text-gray-600 dark:text-muted-foreground">
+                  Residence.
+                </h2>
+                <p className="text-xs">Seoul, South Korea</p>
+              </div>
 
-            <div>
-              <h2 className="text-sm font-light text-gray-600 dark:text-muted-foreground">
-                BachelorDegree.
-              </h2>
-              <p className="text-xs">
-                Sungkyunkwan Univ. Math & Computer Engineering
-              </p>
+              <div>
+                <h2 className="text-sm font-light text-gray-600 dark:text-muted-foreground">
+                  BachelorDegree.
+                </h2>
+                <p className="text-xs">
+                  Sungkyunkwan Univ. Math & Computer Engineering
+                </p>
+              </div>
             </div>
           </div>
         </div>
-        <div className="md:w-1/2 h-[280px] md:h-[350px] relative">
+        <div className="w-full md:w-1/2 h-[220px] sm:h-[280px] md:h-[350px] relative mt-4 md:mt-0">
           <Image
             src="/panda.png"
             alt="Panda"
