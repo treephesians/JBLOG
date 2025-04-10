@@ -18,7 +18,7 @@ const badgeVariants = cva(
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         category:
-          "border-transparent bg-pink-100/80 dark:bg-stone-900/80 text-xs px-2 py-1 text-secondary-foreground dark:text-secondary-foreground [a&]:hover:bg-white/90 dark:[a&]:hover:bg-stone-800/90",
+          "border-transparent bg-gray-200/60 dark:bg-stone-900/80 text-xs px-2 py-1 text-secondary-foreground dark:text-secondary-foreground [a&]:hover:bg-white/90 dark:[a&]:hover:bg-stone-800/90",
         tag: "border border-secondary/50 bg-secondary/20 dark:bg-secondary/15 text-xs px-2 py-0.5 text-muted-foreground/70 dark:text-muted-foreground/60 [a&]:hover:bg-secondary/30 dark:[a&]:hover:bg-secondary/25",
       },
     },

@@ -6,7 +6,7 @@ const Header = () => {
     <div className="fixed top-0 left-0 right-0 z-10 bg-background pt-3 flex justify-center">
       <header className="max-w-3xl w-full px-4 flex justify-between items-center border-b border-border pb-3">
         <div className="font-bold text-xl">
-          <Link href="/">Baamm Blog</Link>
+          <Link href="/">JBlog</Link>
         </div>
         <div className="flex items-center">
           <nav className="mr-4">
