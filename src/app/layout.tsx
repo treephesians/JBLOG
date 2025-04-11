@@ -76,7 +76,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Header />
-          <div className="pt-15 max-w-3xl mx-auto flex-grow">{children}</div>
+          <div className="pt-15 max-w-3xl w-full flex-grow mx-auto px-4">
+            {children}
+          </div>
           <Footer />
         </ThemeProvider>
       </body>
