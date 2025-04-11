@@ -7,6 +7,13 @@ import Loading from "./loading";
 // 데이터 가져오기 함수에 캐싱 설정
 export const revalidate = 3600; // 1시간마다 재검증
 
+// 정적 생성을 위한 경로 생성
+export async function generateStaticParams() {
+  const categories = getAllCategories();
+
+  return [{ category: "all" }, ...categories.map((category) => ({ category }))];
+}
+
 // 타입 정의
 interface Props {
   searchParams: Promise<{ category?: string }>;

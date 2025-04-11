@@ -6,14 +6,23 @@ import { Post } from "@/types/post";
 // 컨텐츠 디렉토리 경로
 const contentDirectory = path.join(process.cwd(), "contents");
 
+// 캐싱을 위한 변수 추가
+let cachedPosts: Post[] | null = null;
+let cachedCategories: string[] | null = null;
+const categoryPostsCache: Record<string, Post[]> = {};
+
 // 모든 카테고리 가져오기
 export function getAllCategories(): string[] {
+  // 캐시된 결과가 있으면 반환
+  if (cachedCategories) return cachedCategories;
+
   try {
-    return fs
+    cachedCategories = fs
       .readdirSync(contentDirectory)
       .filter((dir) =>
         fs.statSync(path.join(contentDirectory, dir)).isDirectory()
       );
+    return cachedCategories;
   } catch (error) {
     console.error("카테고리를 읽는 중 오류 발생:", error);
     return [];
@@ -22,10 +31,14 @@ export function getAllCategories(): string[] {
 
 // 특정 카테고리의 모든 포스트 가져오기
 export function getPostsByCategory(category: string): Post[] {
+  // 캐시된 결과가 있으면 반환
+  if (categoryPostsCache[category]) return categoryPostsCache[category];
+
   const categoryPath = path.join(contentDirectory, category);
 
   try {
     if (!fs.existsSync(categoryPath)) {
+      categoryPostsCache[category] = [];
       return [];
     }
 
@@ -63,10 +76,12 @@ export function getPostsByCategory(category: string): Post[] {
       return post;
     });
 
-    // 날짜 기준 내림차순 정렬
-    return posts.sort(
+    // 날짜 기준 내림차순 정렬 및 결과 캐싱
+    categoryPostsCache[category] = posts.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
+
+    return categoryPostsCache[category];
   } catch (error) {
     console.error(`${category} 카테고리의 포스트를 읽는 중 오류 발생:`, error);
     return [];
@@ -75,6 +90,9 @@ export function getPostsByCategory(category: string): Post[] {
 
 // 모든 포스트 가져오기
 export function getAllPosts(): Post[] {
+  // 캐시된 결과가 있으면 반환
+  if (cachedPosts) return cachedPosts;
+
   try {
     const categories = getAllCategories();
     let allPosts: Post[] = [];
@@ -84,10 +102,12 @@ export function getAllPosts(): Post[] {
       allPosts = [...allPosts, ...postsInCategory];
     });
 
-    // 날짜 기준 내림차순 정렬
-    return allPosts.sort(
+    // 날짜 기준 내림차순 정렬 및 결과 캐싱
+    cachedPosts = allPosts.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
+
+    return cachedPosts;
   } catch (error) {
     console.error("모든 포스트를 읽는 중 오류 발생:", error);
     return [];
