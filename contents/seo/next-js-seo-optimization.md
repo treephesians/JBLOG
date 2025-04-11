@@ -1,7 +1,7 @@
 ---
 title: "Next.js 블로그의 SEO 최적화하기"
 date: "2025-04-10"
-tags: ["SEO", "Next.js", "웹개발", "블로그"]
+tags: ["SEO", "Next.js"]
 description: "Next.js 블로그의 검색 엔진 최적화(SEO)를 위한 완벽 가이드: 메타데이터, OpenGraph, 사이트맵, robots.txt 설정 방법"
 coverImage: "/images/nextjs-seo-cover.png"
 ---
