@@ -3,9 +3,9 @@ import { PostCard } from "@/components/post/post-card";
 import { CategoryFilter } from "@/components/post/category-filter";
 import { Post } from "@/types/post";
 
-type Props = {
-  searchParams: { category?: string };
-};
+interface Props {
+  searchParams: Promise<{ category?: string }>;
+}
 
 export default async function PostPage({ searchParams }: Props) {
   const { category = "all" } = await searchParams;

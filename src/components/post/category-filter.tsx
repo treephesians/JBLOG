@@ -15,9 +15,10 @@ export function CategoryFilter({
       <Link href="/posts" className="flex">
         <Button
           variant={activeCategory === "all" ? "default" : "outline"}
-          className="text-sm"
+          size="xs"
+          className="font-medium min-w-[4rem] min-h-[1.75rem] border"
         >
-          All
+          ALL
         </Button>
       </Link>
       {categories.map((category) => (
@@ -28,7 +29,8 @@ export function CategoryFilter({
         >
           <Button
             variant={activeCategory === category ? "default" : "outline"}
-            className="text-sm"
+            size="xs"
+            className="font-medium min-w-[4rem] min-h-[1.75rem] border"
           >
             {category}
           </Button>
