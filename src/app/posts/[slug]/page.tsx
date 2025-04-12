@@ -11,6 +11,7 @@ import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
+import Giscus from "@/components/comments/Giscus";
 
 interface PostPageProps {
   params: Promise<{
@@ -157,6 +158,7 @@ export default async function PostPage({ params }: PostPageProps) {
       </article>
 
       <TocContainer items={tocItems} />
+      <Giscus />
     </div>
   );
 }
